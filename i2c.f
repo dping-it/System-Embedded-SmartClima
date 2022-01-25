@@ -42,27 +42,21 @@
 
 
 \ Ripristina lo Status Register utilizzando I2C_STATUS_REGISTER (BASE 804004 +)
-\ (0x00000302) è (0000 0000 0000 0000 0000 0011 0000 0010) in BINARIO
-\ Il bit 1 è 1 -> Cancella campo Fatto
+\ HEX (0x00000302) è (0000 0000 0000 0000 0000 0011 0000 0010) in BIN
+\ Il bit 1 è 1 -> Cancella campo DONE
 \ Il bit 8 è 1 -> Cancella campo ERR
 \ Il bit 9 è 1 -> Cancella campo CLKT 
-
-\ Resets Status Register using I2C_STATUS_REGISTER (BASE 804004 +)
-\ (0x00000302) is (0000 0000 0000 0000 0000 0011 0000 0010) in BINARY
-\ Bit 1 is 1 -> Clear Done field
-\ Bit 8 is 1 -> Clear ERR field
-\ Bit 9 is 1 -> Clear CLKT field
 : RESET_S 
   302 BASE 804004 + ! ;
 
-\ Resets FIFO using I2C_CONTROL_REGISTER (BASE 804000 +)
-\ (0x00000010) is (0000 0000 0000 0000 0000 0000 0001 0000) in BINARY
-\ Bit 4 is 1 -> Clear FIFO
+\ Ripristina FIFO utilizzando I2C_CONTROL_REGISTER (BASE 804000 +)
+\ HEX (0x00000010) è (0000 0000 0000 0000 0000 0000 0001 0000) in BIN
+\ Il bit 4 è 1 -> Cancella FIFO 
 : RESET_FIFO
   10 BASE 804000 + ! ;
 
-\ Sets slave address 0x00000027 (Because our expander model is PCF8574T BLUE)
-\ into I2C_SLAVE_ADDRESS_REGISTER (BASE 80400C +)
+\ Imposta l'indirizzo SLAVE 0x00000027 ( perché il nostro modello DRIVE è PCF8574T )
+\ in I2C_SLAVE_ADDRESS_REGISTER (BASE 80400C +) 
 : SET_SLAVE 
   27 BASE 80400C + ! ;
 
