@@ -9,6 +9,8 @@
 \ Per ogni colonna controllare i valori
 \ Se viene letto il bit di rilevamento dell'evento, abbiamo trovato il tasto premuto
    \ nel formato RIGA-COLONNA
+
+   \ MATRIX 5x4
 \ GPIO-12 -> Riga-1 (F1-F2-#-*)
 \ GPIO-18 -> Riga-1 (1-2-3-SU)
 \ GPIO-23 -> Riga-2 (4-5-6-GIU)
@@ -137,8 +139,9 @@ CREATE COUNTER
   19 = IF 11H DUP EMIT_STORE 
   THEN THEN THEN THEN THEN ;
 
-\ Emits the given Row-Column char combination using the corresponding EMITC1/C2/C3/C4 WORD
-\ Example: 12 10 EMIT_R
+\ TODO
+\ Stampa la combinazione di caratteri Riga-Colonna specificata utilizzando la corrispondente WORD EMTC1/C2/C3/C4
+\ Esempio: 12 10 EMIT_R
 : EMIT_R
   DUP 10 = IF DROP EMITC1 ELSE 
   DUP 16 = IF DROP EMITC2 ELSE 
@@ -146,8 +149,8 @@ CREATE COUNTER
   A = IF EMITC4 
   THEN THEN THEN THEN ;
 
-\ Checks if a key of the given row is pressed, waits for it to be released
-\   and emits the corresponding HEX value to LCD
+\ Verifica se un tasto della riga data è premuto, attende il suo rilascio,
+\ e stampa il valore esadecimale corrispondente sull'LCD 
 : CHECK_CL 
   DUP DUP
     PRESSED 1 = IF 1000 DELAY 
@@ -159,11 +162,13 @@ CREATE COUNTER
     ELSE DROP DROP DROP 
   THEN ;
 
-\ Checks the given Row by setting it to HIGH, checking its Columns and setting it to LOW finally
-\ Example usage -> 12 CHECK_ROW (Checks the first row)
-\               -> 17 CHECK_ROW (Checks the second row)
-\               -> 18 CHECK_ROW (Checks the third row)
-\               -> 19 CHECK_ROW (Checks the fourth row)
+\ TODO
+\ Controlla la riga data impostandola su HIGH, controllandone le colonne e infine impostandola su LOW
+\ Esempio -> 32 CHECK_ROW (Controlla la prima riga)
+\         -> 12 CHECK_ROW (Controlla la seconda riga)
+\         -> 17 CHECK_ROW (Controlla la terza riga)
+\         -> 18 CHECK_ROW (Controlla la quarta riga)
+\         -> 19 CHECK_ROW (Controlla la quinta riga) 
 : CHECK_ROW
   DUP DUP DUP DUP DUP 
   HIGH  
@@ -179,10 +184,11 @@ CREATE COUNTER
 : RES_CTR 
   0 COUNTER ! ;
 
-\ The main WORD to detect any press/release event and eventually to emit the 
-\   corresponding char to LCD
-\ This WORD is called automatically when the SETUP WORD is called,
-\   so unless you set the Rows to LOW you do not need to use this WORD
+
+\ La main WORD per rilevare qualsiasi evento di PRESS/RELASE ed eventualmente stampa il
+\ carattere corrispondente su LCD
+\ Questa WORD deve essere chiamata all'avvio del SETUP,
+\ quindi, a meno che non si impostino le righe su LOW, non è necessario utilizzare questa WORD 
 : DETECT
   0 COUNTER !
   BEGIN 
