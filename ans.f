@@ -67,6 +67,7 @@
 
 DROP
 
+\ Ritorna informazioni sull'autore delle modifiche
 : AUTHOR
 	S" TEST-MODE" FIND NOT IF
 		." AUTHOR DAVIDE PROIETTO " VERSION . CR
