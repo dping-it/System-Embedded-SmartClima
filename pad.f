@@ -11,7 +11,7 @@
    \ nel formato RIGA-COLONNA
 
    \ MATRIX 5x4
-\ GPIO-12 -> Riga-1 (F1-F2-#-*)
+\ GPIO-17 -> Riga-1 (F1-F2-#-*)
 \ GPIO-18 -> Riga-1 (1-2-3-SU)
 \ GPIO-23 -> Riga-2 (4-5-6-GIU)
 \ GPIO-24 -> Riga-3 (7-8-9-ESC)
@@ -32,14 +32,14 @@
 \ Il campo GPFSEL2 viene utilizzato per definire il funzionamento dei pin GPIO-20 - GPIO-29
 
 \ Ogni 3 bit di GPFSEL rappresenta un pin GPIO
-\ Per indirizzare GPIO-10, GPIO-16 e GPIO-18 dovremmo operare sulla posizione dei bit
-   \ 2-1-0(GPIO-10), X-Y-Z(GPIO-12), 20-19-18(GPIO-16) e 26-25-24(GPIO-18) che memorizzano il valore in GPFSEL1
+\ Per indirizzare GPIO-10, GPIO-17, GPIO-16 e GPIO-18 dovremmo operare sulla posizione dei bit
+   \ 2-1-0(GPIO-10), X-Y-Z(GPIO-17), 20-19-18(GPIO-16) e 26-25-24(GPIO-18) che memorizzano il valore in GPFSEL1
 
 \ Per indirizzare GPIO-22, GPIO-23, GPIO-24, GPIO-25 e GPIO-27 dovremmo operare sulla posizione dei bit
    \ 8-7-6(GPIO-22), 11-10-9(GPIO-23), 14-13-12(GPIO-24), 17-16-15(GPIO-25) e 23-22- 21(GPIO-27)
    \ memorizzazione del valore in GPFSEL2 
 
-\ GPIO-12 settato in output -> 001
+\ GPIO-17 settato in output -> 001
 \ GPIO-18 settato in output -> 001
 \ GPIO-23 settato in output -> 001
 \ GPIO-24 settato in output -> 001
@@ -56,7 +56,7 @@
   1000000 GPFSEL1 @ OR GPFSEL1 ! 
   9200 GPFSEL2 @ OR GPFSEL2 ! ;
 
-\ Cancella GPIO-12, GPIO-18, GPIO-23, GPIO-24 e GPIO-25 utilizzando il registro GPCLR0
+\ Cancella GPIO-17, GPIO-18, GPIO-23, GPIO-24 e GPIO-25 utilizzando il registro GPCLR0
    \ scrivendo 1 nelle posizioni corrispondenti
 \ HEX (0x3840000) che è (0011 1000 0100 0000 0000 0000 0000) in BIN 
 : CLEAR_ROWS 
@@ -95,20 +95,22 @@ CREATE COUNTER
 \ Pin fisico Riga -> EMIT-Colonna
 \ Esempio: 12 EMTC1 stampa A (41 in HEX) su lcd
 \ 19 EMTC1 stampa D (44 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO17 = 11
 : EMITC1 
-  DUP 32 = IF 2A DUP EMIT_STORE DROP ELSE 
+  DUP 11 = IF 2A DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 5E DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 5F DUP EMIT_STORE DROP ELSE 
-  DUP 18 = IF 1B DUP EMIT_STORE DROP ELSE  
-  19 = IF 0D DUP EMIT_STORE 
+  DUP 18 = IF 1B DUP EMIT_STORE DROP ELSE 
+  19 = IF D DUP EMIT_STORE 
   THEN THEN THEN THEN THEN ;
 
 \ Stampa uno dei caratteri trovati sulla Colonna 2 controllando il numero di riga specificato con un ciclo condizionale
 \ Pin fisico Riga -> EMIT-Colonna
 \ Esempio: 32 EMTC2 stampa # (23 in HEX) su lcd
 \ 17 EMTC2 stampa 6 (36 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO18 = 12
 : EMITC2 
-  DUP 32 = IF 23 DUP EMIT_STORE DROP ELSE
+  DUP 11 = IF 23 DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 33 DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 36 DUP EMIT_STORE DROP ELSE 
   DUP 18 = IF 39 DUP EMIT_STORE DROP ELSE 
@@ -119,8 +121,9 @@ CREATE COUNTER
 \ Pin fisico Riga -> EMIT-Colonna
 \ Esempio: 18 EMTC2 stampa 8 (38 in HEX) su lcd
 \ 19 EMTC2 stampa 0 (30 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO17 = 11
 : EMITC3 
-  DUP 32 = IF 12 DUP EMIT_STORE DROP ELSE
+  DUP 11 = IF 25 DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 32 DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 35 DUP EMIT_STORE DROP ELSE 
   DUP 18 = IF 38 DUP EMIT_STORE DROP ELSE 
@@ -131,15 +134,15 @@ CREATE COUNTER
 \ Pin fisico Riga -> EMIT-Colonna
 \ Esempio: 12 EMTC2 stampa 1 (31 in HEX) su lcd
 \ 18 EMTC2 stampa 7 (37 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO18 = 12
 : EMITC4 
-  DUP 32 = IF 11 DUP EMIT_STORE DROP ELSE
+  DUP 11 = IF 24 DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 31 DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 34 DUP EMIT_STORE DROP ELSE 
   DUP 18 = IF 37 DUP EMIT_STORE DROP ELSE 
-  19 = IF 3C   DUP EMIT_STORE 
+  19 = IF 3C DUP EMIT_STORE 
   THEN THEN THEN THEN THEN ;
 
-\ TODO
 \ Stampa la combinazione di caratteri Riga-Colonna specificata utilizzando la corrispondente WORD EMTC1/C2/C3/C4
 \ Esempio: 12 10 EMIT_R
 : EMIT_R
@@ -172,7 +175,6 @@ CREATE COUNTER
 : CHECK_ROW
   DUP DUP DUP DUP DUP 
   HIGH  
-    12 CHECK_CL
     10 CHECK_CL 
     16 CHECK_CL
     1B CHECK_CL
@@ -180,7 +182,7 @@ CREATE COUNTER
   LOW ;
 
 : ?CTR 
-  COUNTER @ 4 = ;
+  COUNTER @ 5 = ;
 
 : RES_CTR 
   0 COUNTER ! ;
@@ -193,10 +195,9 @@ CREATE COUNTER
 : DETECT
   0 COUNTER !
   BEGIN 
-    32 CHECK_ROW
+    11 CHECK_ROW
     12 CHECK_ROW
     17 CHECK_ROW
     18 CHECK_ROW
     19 CHECK_ROW
-  ?CTR UNTIL 
-;
+  ?CTR UNTIL LCDCLEAR ;
