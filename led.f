@@ -7,7 +7,10 @@
 
 DECIMAL
 
-13 COSTANT LED
+5 COSTANT REDLED
+6 COSTANT YELLOWLED
+
+
 
 : GPFSELn ( pinGPIO -- addrGPIO )
     10 / 4 * \ GPIO_Register_n * Offset
@@ -34,5 +37,5 @@ DECIMAL
 : OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
 
 \ GPIO Input
-: ACTIVE  LED ON ;
-: DEACTIVE LED OFF ;
+: ACTIVE ( pin -- ) GPFSELOUT! GPON! ;
+: DEACTIVE GPFSELOUT! GPOFF6! ;
