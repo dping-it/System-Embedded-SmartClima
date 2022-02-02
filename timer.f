@@ -34,7 +34,7 @@
 
 \ Time Conversions
 DECIMAL
-: uSECS ( n -- dt ) ;
+: uSECS ( n -- dt ) DECIMAL 1 * ;
 : mSECS ( n -- dt ) DECIMAL 1000 * ;
 : SECS
 
@@ -54,6 +54,6 @@ UNTIL
 DROP ;
 : 250mDELAY ( -- ) 250 mSECS DELAY ;
 
-: 10usDELAY ( -- ) ;
-: 40usDELAY ( -- ) ;
-: 80usDELAY ( -- ) ;
+: 10usDELAY ( -- )  10 uSECS DELAY ;
+: 40usDELAY ( -- ) 40 uSECS DELAY ;
+: 80usDELAY ( -- ) 80 uSECS DELAY ;
