@@ -13,10 +13,11 @@
   43 >LCD  
   4F >LCD
   4D >LCD
-  45 >LCD ;
+  45 >LCD 
+  20 >LCD ;
 
-\ Prints "not valid" to screen
-: NOT_VALID 
+\ Prints "NOT VALID" to screen
+: INVALID 
   4E >LCD
   4F >LCD
   54 >LCD
@@ -27,19 +28,40 @@
   49 >LCD
   44 >LCD ;
 
-: SMARTS 
+\ Prints "SMART" to screen
+: SMART 
     53 >LCD 
     4D >LCD
     41 >LCD
     52 >LCD  
     54 >LCD
-    20 >LCD
+    20 >LCD ;
+
+\ Prints "SYSTEM" to screen
+  : SYSTEM 
     53 >LCD
     59 >LCD  
     53 >LCD
     54 >LCD
     45 >LCD
     4D >LCD ;
+
+\ Prints "READY" to screen
+: READY 
+    52 >LCD 
+    45 >LCD
+    41 >LCD
+    44 >LCD  
+    59 >LCD 
+    20 >LCD;
+
+\ Prints "BUSY" to screen
+: BUSY 
+    42 >LCD 
+    55 >LCD
+    53 >LCD
+    59 >LCD 
+    20 >LCD ;
 
 
 \ Clears the screen
