@@ -36,7 +36,7 @@
 DECIMAL
 : uSECS ( n -- dt ) DECIMAL 1 * ;
 : mSECS ( n -- dt ) DECIMAL 1000 * ;
-: SECS
+: SECS  ( n -- dt ) DECIMAL 100000 * ;
 
 
   : TIMER ( -- )

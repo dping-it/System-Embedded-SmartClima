@@ -8,12 +8,12 @@ exception: ECHECKSUM
 
 : init ( -- )
     dht-pin GPIO_LOW gpio-write
-    20000 us
+    20000 uSECS
     dht-pin GPIO_HIGH gpio-write
     200 GPIO_HIGH dht-pin pulse-len
     drop ;
    
-\ high pulse for 26-28 us is bit0, high pulse for 70 us is bit1    
+\ high pulse for 26-28 uSECS is bit0, high pulse for 70 uSECS is bit1    
 : fetch ( -- )    
     40 0 do
         150 GPIO_HIGH dht-pin pulse-len
