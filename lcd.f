@@ -3,9 +3,9 @@
 \ Università degli Studi di Palermo )
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
 
-\ Must be INCLUDEd after i2c.f
+\ includere dopo i2c.f
 
-\ Prints "welcome" to screen
+\ Stampa "welcome" a display
 : WELCOME
   57 >LCD 
   45 >LCD
@@ -16,8 +16,8 @@
   45 >LCD 
   20 >LCD ;
 
-\ Prints "NOT VALID" to screen
-: INVALID 
+\ Stampa "NOT VALID" a display
+: NOT_VALID 
   4E >LCD
   4F >LCD
   54 >LCD
@@ -28,7 +28,7 @@
   49 >LCD
   44 >LCD ;
 
-\ Prints "SMART" to screen
+\ Stampa "SMART" a display
 : SMART 
     53 >LCD 
     4D >LCD
@@ -37,25 +37,35 @@
     54 >LCD
     20 >LCD ;
 
-\ Prints "SYSTEM" to screen
+\ Stampa "CLIMA" a display
+: CLIMA 
+    43 >LCD 
+    4C >LCD
+    49 >LCD
+    4D >LCD  
+    41 >LCD
+    20 >LCD ;
+
+\ Stampa "SYSTEM"  a display
   : SYSTEM 
     53 >LCD
     59 >LCD  
     53 >LCD
     54 >LCD
     45 >LCD
-    4D >LCD ;
+    4D >LCD
+    20 >LCD ;
 
-\ Prints "READY" to screen
+\ Stampa "READY" a display
 : READY 
     52 >LCD 
     45 >LCD
     41 >LCD
     44 >LCD  
     59 >LCD 
-    20 >LCD;
+    20 >LCD ;
 
-\ Prints "BUSY" to screen
+\ Stampa "BUSY" a display
 : BUSY 
     42 >LCD 
     55 >LCD
@@ -63,15 +73,40 @@
     59 >LCD 
     20 >LCD ;
 
+\ Stampa "LIGHT" a display
+: LIGHT 
+    4C >LCD 
+    49 >LCD
+    47 >LCD
+    48 >LCD 
+    54 >LCD
+    20 >LCD ;
 
-\ Clears the screen
+\ Stampa "WIND" a display
+: WIND 
+    57 >LCD 
+    49 >LCD
+    4E >LCD
+    44 >LCD 
+    20 >LCD ;
+
+\ Stampa "STOP" a display
+: STOP 
+    53 >LCD 
+    54 >LCD
+    4F >LCD
+    50 >LCD 
+    20 >LCD ;
+
+
+\ Cancella il display
 : CLEAR
   101 >LCD ;
 
-\ Moves the blinking cursor to second line
+\ Muove il cursore sulla seconda linea
 : >LINE2
   1C0 >LCD ;
 
-\ Shows a blinking cursor at first line
+\ Visualizza il cursore sulla prima linea
 : SETUP_LCD 
   102 >LCD ;

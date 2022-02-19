@@ -17,27 +17,40 @@
 : ALIGN HERE @ ALIGNED HERE ! ;
 : C, HERE @ C! 1 HERE +! ;
 : S" IMMEDIATE ( -- addr len )
-	STATE @ IF
-		' LITS , HERE @ 0 ,
-		BEGIN KEY DUP '"'
+    STATE @ IF
+        ' LITS , HERE @ 0 ,
+        BEGIN KEY DUP '"'
                 <> WHILE C, REPEAT
-		DROP DUP HERE @ SWAP - 4- SWAP ! ALIGN
-	ELSE
-		HERE @
-		BEGIN KEY DUP '"'
+        DROP DUP HERE @ SWAP - 4- SWAP ! ALIGN
+    ELSE
+        HERE @
+        BEGIN KEY DUP '"'
                 <> WHILE OVER C! 1+ REPEAT
-		DROP HERE @ - HERE @ SWAP
-	THEN
+        DROP HERE @ - HERE @ SWAP
+    THEN
 ;
 
 : ." IMMEDIATE ( -- )
-	STATE @ IF
-		[COMPILE] S" ' TELL ,
-	ELSE
-		BEGIN KEY DUP '"' = IF DROP EXIT THEN EMIT AGAIN
-	THEN
+    STATE @ IF
+        [COMPILE] S" ' TELL ,
+    ELSE
+        BEGIN KEY DUP '"' = IF DROP EXIT THEN EMIT AGAIN
+    THEN
 ;
 
+: EXCEPTION-MARKER RDROP 0 ;
+: CATCH ( xt -- exn? ) DSP@ 4+ >R ' EXCEPTION-MARKER 4+ >R EXECUTE ;
+: THROW ( n -- ) ?DUP IF
+    RSP@ BEGIN DUP R0 4-
+        < WHILE DUP @ ' EXCEPTION-MARKER 4+
+        = IF 4+ RSP! DUP DUP DUP R> 4- SWAP OVER ! DSP! EXIT THEN
+    4+ REPEAT DROP
+    CASE
+        0 1- OF ." ABORTED" CR ENDOF
+        ." UNCAUGHT THROW " DUP . CR
+    ENDCASE QUIT THEN
+;
+: ABORT ( -- ) 0 1- THROW ;
 
 : JF-HERE   HERE ;
 : JF-CREATE   CREATE ;
@@ -67,132 +80,191 @@
 
 DROP
 
+\ Ritorna informazioni sull'autore delle modifiche
 : AUTHOR
-	S" TEST-MODE" FIND NOT IF
-		." AUTHOR DAVIDE PROIETTO " VERSION . CR
-		UNUSED . ." CELLS REMAINING" CR
-		." OK "
-	THEN
+    S" TEST-MODE" FIND NOT IF
+        ." AUTHOR DAVIDE PROIETTO " VERSION . CR
+        UNUSED . ." CELLS REMAINING" CR
+        ." OK "
+    THEN
 ;
 \ Embedded Systems - Sistemi Embedded - 17873
 \ Setting GPIO 
 \ Università degli Studi di Palermo 
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 
 
-\ Must be INCLUDEd after ans.f
+\ Includere dopo il flie ans.f
 
-\ GPIO definitions
+\ GPIO Mapping
 HEX
-FE000000 CONSTANT DEVBASE
-DEVBASE 200000 + CONSTANT GPFSEL0
-DEVBASE 200004 + CONSTANT GPFSEL1
-DEVBASE 200008 + CONSTANT GPFSEL2
-DEVBASE 200040 + CONSTANT GPEDS0
-DEVBASE 20001C + CONSTANT GPSET0
-DEVBASE 200028 + CONSTANT GPCLR0
-DEVBASE 200034 + CONSTANT GPLEV0
-DEVBASE 200058 + CONSTANT GPFEN0
+FE000000 CONSTANT BASE  \ Indirizzo base dei registri
+BASE 200000 + CONSTANT GPFSEL0  \ Spazio dei registri GPIO FE200000 
+BASE 200004 + CONSTANT GPFSEL1
+BASE 200008 + CONSTANT GPFSEL2
+BASE 200040 + CONSTANT GPEDS0
+BASE 20001C + CONSTANT GPSET0
+BASE 200028 + CONSTANT GPCLR0
+BASE 200034 + CONSTANT GPLEV0
+BASE 200058 + CONSTANT GPFEN0
 
-\ Applies Logical Left Shift of 1 bit on the given value
-\ Returns the shifted value
-\ Usage: 2 MASK
-  \ 2(BINARY 0010) -> 4(BINARY 0100)
+\ Applica lo spostamento logico sinistro di 1 bit sul valore dato
+\ e restituisce il valore spostato
+\ Utilizzo: 2 MASK
+   \ 2( BIN 0010 ) -> 4( BIN 0100 ) 
 : MASK 1 SWAP LSHIFT ;
 
-\ Sets the given GPIO pin to HIGH if configured as output
-\ Usage: 12 HIGH -> Sets the GPIO-18 to HIGH
+\ Imposta il pin GPIO specificato su HIGH se configurato come output
+\ Utilizzo: 12 ( pin fisico ) HIGH -> Imposta il GPIO-18 su HIGH 
 : HIGH 
   MASK GPSET0 ! ;
 
-\ Clears the given GPIO pin if configured as output
-\ Usage: 12 LOW -> Clears the GPIO-18
+\ Resetta il pin GPIO specificato se configurato come output
+\ Utilizzo: 12 ( pin fisico ) LOW -> Resetta il GPIO-18 
 : LOW 
   MASK GPCLR0 ! ;
 
-\ Tests the actual value of GPIO pins 0..31
-\ 0 -> GPIO pin n is low
-\ 1 -> GPIO pin n is high
-\ Usage: 12 TPIN (Test GPIO-18)
+\ Verifica il valore effettivo dei pin GPIO 0..31
+\ 0 -> Il pin GPIO n è LOW
+\ 1 -> Il pin GPIO n è HIGH
+\ Utilizzo: 12 TPIN (Test GPIO-18) 
 : TPIN GPLEV0 @ SWAP RSHIFT 1 AND ;
 
+\ Crea un tempo di attesa in millisecondi
+\ Utilizzo: 1000 DELAY
 : DELAY 
   BEGIN 1 - DUP 0 = UNTIL DROP ;
+
+DECIMAL
+
+\ GPIO ( n -- n ) takes GPIO pin number and test if is lower then 27 otherwise abort
+: GPIO DUP 30 > IF ABORT THEN ;
+
+\ MODE ( n -- a b c) prende il numero del pin GPIO e lascia nello stack il numero del bit di spostamento a sinistra (a) richiesto per impostare i corrispondenti bit di controllo GPIO di GPFSELN,
+\ dove N è il numero del registro, insieme all'indirizzo del registro GPFSELN (b) e al valore corrente memorizzato in (c) cancellato da una MASCHERA;
+\ N ad (a) sono calcolati dividendo il numero GPIO per 10; N è il quoziente moltiplicato per 4 mentre a è il promemoria. Quindi GPFSELN viene calcolato da GPFSEL0 + N
+\ (es. GPIO 21 è controllato da GPFSEL2 quindi 21 / 10 --> N = 2 * 4, a = 1 --> GPFSEL0 + 8 = GPFSEL2 )
+\ MASK viene utilizzato per cancellare i 3 bit del registro GPFSEL che controlla gli stati GPIO utilizzando INVERT AND e il valore (a)
+\ La maschera si ottiene spostando a sinistra 7 (111 binary ) di 3 * (resto di 10 divisioni), ad esempio 21 / 10 -> 3 * 1 -> 7 spostato a sinistra di 3 ).
+: MODE 10 /MOD 4 * GPFSEL0 + SWAP 3 * DUP 7 SWAP LSHIFT ROT DUP @ ROT INVERT AND ROT ;
+
+\ OUTPUT (a b c -- ) attiva l'uscita di MODE e quindi imposta il registro GPFSELN del GPIO corrispondente come uscita.
+\ Il bit GPFSELN che controlla l'uscita GPIO è impostato dall'operazione OR tra il valore corrente di GPFSELN, cancellato dalla maschera, e un 1 spostato a sinistra dal promemoria di 10
+\ divisione moltiplicata per 3. (il valore 001 nella posizione del bit corrispondente di GPFSELN imposta GPIO come OUTPUT)
+\ es. con GPIO 21 AND @GPFSEL2: 011010--> 111000 011010 INVERT AND --> 000010 001000 OR --> 001010
+: OUTPUT 1 SWAP LSHIFT OR SWAP ! ;
+
+\ INPUT (a b c -- ) attiva l'uscita di MODE e quindi imposta il registro GPFSELN del GPIO corrispondente come input.
+\ Uguale a OUTPUT ma elimina il valore di spostamento non necessario e il bit GPFSELN che controlla l'ingresso GPIO è impostato dal
+\ INVERTE AND operazione tra il valore corrente di GPFSELN, azzerato dalla maschera,
+: INPUT 1 SWAP LSHIFT INVERT AND SWAP ! ;
+
+\ ON ( n -- ) prende il numero pin GPIO, sposta a sinistra 1 per questo numero e imposta il bit corrispondente del registro GPCLR0
+: ON 1 SWAP LSHIFT GPSET0 ! ;
+
+\ OFF ( n -- ) prende il numero pin GPIO, sposta a sinistra 1 per questo numero e imposta il bit corrispondente del registro GPSET0
+: OFF 1 SWAP LSHIFT GPCLR0 ! ;
+
+\ LEVEL ( n -- b ) prende il numero pin GPIO, sposta a sinistra 1 di questo numero, ottiene il valore corrente del registro GPLEV0 e lascia nello stack il valore del corrispondente
+\ Bit numero pin GPIO
+: LEVEL 1 SWAP LSHIFT GPLEV0 @ SWAP AND ;
+
+\ GPFSELOUT! scorciatoia per impostare gpio come output
+: GPFSELOUT! GPIO MODE OUTPUT ;
+
+\ GPFSELIN! scorciatoia per impostare gpio come input
+: GPFSELIN! GPIO MODE INPUT ;
+
+\ GPFSELOUT! scorciatoia per impostare gpio HIGH
+: GPON! GPIO ON ;
+
+\ GPFSELOUT! scorciatoia per impostare gpio low
+: GPOFF! GPIO OFF ;
+
+\ GPFSELOUT! scorciatoia per ottenere il livello gpio
+: GPLEV@ GPIO LEVEL ;
+
+\ GPAFEN ( n -- ) imposta il registro GPAFEN0 per il pin gpio n per l'evento di caduta asincrono
+: GPAFEN! GPIO 1 SWAP LSHIFT GPFEN0 ! ;
+
+HEX
 \ Embedded Systems - Sistemi Embedded - 17873
 \ I2C Driver  
 \ Università degli Studi di Palermo
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
 
-\ Must be INCLUDEd after gpio.f
+\ Includere dopo gpio.f
 
-\ 3 Broadcom Serial Controller (BSC) masters exist, we use the 2nd one
-\ BSC1 register address: 0xFE804000 (Because our model is Rpi 4B)
-\ To use the I2C interface add the following offsets to BCS1 register address
-\ Each register is 32-bits long
-\ 0x0  -> Control Register (used to enable interrupts, clear the FIFO, define a read or write operation and start a transfer)
-\ 0x4  -> Status Register (used to record activity status, errors and interrupt requests)
-\ 0x8  -> Data Length Register (defines the number of bytes of data to transmit or receive in the I2C transfer)
-\ 0xc  -> Slave Address Register (specifies the slave address and cycle type)
-\ 0x10 -> Data FIFO Register (used to access the FIFO)
-\ 0x14 -> Clock Divider Register (used to define the clock speed of the BSC peripheral)
-\ 0x18 -> Data Delay Register (provides fine control over the sampling/launch point of the data)
-\ 0x1c -> Clock Stretch Timeout Register (provides a timeout on how long the master waits for the slave
-\                                         to stretch the clock before deciding that the slave has hung)
+\ Ci sono otto master Broadcom Serial Controller (BSC) all'interno di BCM2711,
+\ BSC2 e BSC7 sono dedicati all'uso da parte delle interfacce HDMI, qui utilizziamo BSC1 all'indirizzo: 0xFE804000  
+
+\ Per utilizzare l'interfaccia I2C, basta aggiungere i seguenti offset all'indirizzo del registro BCS1.
+\ Ogni registro è lungo 32 bit
+
+\ 0x0 -> Control Register ( usato per abilitare gli interrupt, cancellare il FIFO, definire un'operazione di lettura o scrittura e avviare un trasferimento )
+\ 0x4 -> Status Register ( usato per registrare lo stato delle attività, gli errori e le richieste di interruzione )
+\ 0x8 -> Data Length Register ( definisce il numero di byte di dati da trasmettere o ricevere nel trasferimento I2C )
+\ 0xc -> Slave Address Register ( specifica l'indirizzo slave e il tipo di ciclo )
+\ 0x10 -> Data FIFO Register ( utilizzato per accedere al FIFO )
+\ 0x14 -> Clock Divider Register ( usato per definire la velocità di clock della periferica BSC )
+\ 0x18 -> Data Delay Register ( fornisce un controllo accurato sul punto di campionamento/lancio dei dati )
+\ 0x1c -> Clock Stretch Timeout Register ( fornisce un timeout su quanto tempo il master può attende lo slave, così da allungare il timeout, prima di decretarne la caduta )
 
 \ I2C REGISTER ADDRESSES
-\ DEVBASE 804000 + -> I2C_CONTROL_REGISTER_ADDRESS
-\ DEVBASE 804004 + -> I2C_STATUS_REGISTER_ADDRESS
-\ DEVBASE 804008 + -> I2C_DATA_LENGTH_REGISTER_ADDRESS
-\ DEVBASE 80400C + -> I2C_SLAVE_ADDRESS_REGISTER_ADDRESS
-\ DEVBASE 804010 + -> I2C_DATA_FIFO_REGISTER_ADDRESS
-\ DEVBASE 804014 + -> I2C_CLOCK_DIVIDER_REGISTER_ADDRESS
-\ DEVBASE 804018 + -> I2C_DATA_DELAY_REGISTER_ADDRESS
-\ DEVBASE 80401C + -> I2C_CLOCK_STRETCH_TIMEOUT_REGISTER_ADDRESS
+\ BASE 804000 + -> I2C_CONTROL_REGISTER_ADDRESS
+\ BASE 804004 + -> I2C_STATUS_REGISTER_ADDRESS
+\ BASE 804008 + -> I2C_DATA_LENGTH_REGISTER_ADDRESS
+\ BASE 80400C + -> I2C_SLAVE_ADDRESS_REGISTER_ADDRESS
+\ BASE 804010 + -> I2C_DATA_FIFO_REGISTER_ADDRESS
+\ BASE 804014 + -> I2C_CLOCK_DIVIDER_REGISTER_ADDRESS
+\ BASE 804018 + -> I2C_DATA_DELAY_REGISTER_ADDRESS
+\ BASE 80401C + -> I2C_CLOCK_STRETCH_TIMEOUT_REGISTER_ADDRESS
 
-\ GPIO-2(SDA) AND GPIO-3(SCL) PINS SHOULD TAKE ALTERNATE FUNCTION 0
-\ SO WE SHOULD CONFIGURE GPFSEL0 FIELD AS IT IS USED TO DEFINE THE OPERATION OF THE FIRST 10 GPIO PINS
-\ EACH 3-BITS OF THE GPFSEL REPRESENTS A GPIO PIN, SO IN ORDER TO ADDRESS THE GPIO-2 AND GPIO-3
-\   IN THE GPFSEL0 FIELD (32-BITS), WE SHOULD OPERATE ON THE BITS POSITION 8-7-6(GPIO-2) AND 11-10-9(GPIO-3)
-\ AS A RESULT WE SHOULD WRITE (0000 0000 0000 0000 0000 1001 0000 0000) 
-\   TO GPFSEL0_REGISTER_ADDRESS IN HEX(0x00000900)
+\ I pin GPIO-2 (SDA) e GPIO-3 (SCL) devono prendere la ALTERNATIVE FUNCTION 0
+\ quindi dobbiamo configurare il GPFSEL0 che viene utilizzato per definire il funzionamento dei primi 10 pin GPIO.
+\ ogni 3-bit del gpfsel rappresentano un pin GPIO, così per indirizzare GPIO-2 e GPIO-3
+\ nel campo GPFSEL0 (32-bits), dobbiamo operare sui bit in posizione 8-7-6 (GPIO-2) e 11-10-9 (GPIO-3)
+\ di conseguenza dobbiamo scrivere (0000 0000 0000 0000 0000 1001 0000 0000) ovvero in HEX (0x00000900)
+\ su GPFSEL0 per settare la ALTERNATIVE FUNCTION 0
+
 : SETUP_I2C 
   900 GPFSEL0 @ OR GPFSEL0 ! ;
 
-\ Resets Status Register using I2C_STATUS_REGISTER (DEVBASE 804004 +)
-\ (0x00000302) is (0000 0000 0000 0000 0000 0011 0000 0010) in BINARY
-\ Bit 1 is 1 -> Clear Done field
-\ Bit 8 is 1 -> Clear ERR field
-\ Bit 9 is 1 -> Clear CLKT field
+\ Ripristina lo Status Register utilizzando I2C_STATUS_REGISTER (BASE 804004 +)
+\ HEX (0x00000302) è (0000 0000 0000 0000 0000 0011 0000 0010) in BIN
+\ Il bit 1 è 1 -> Cancella campo DONE
+\ Il bit 8 è 1 -> Cancella campo ERR
+\ Il bit 9 è 1 -> Cancella campo CLKT 
 : RESET_S 
-  302 DEVBASE 804004 + ! ;
+  302 BASE 804004 + ! ;
 
-\ Resets FIFO using I2C_CONTROL_REGISTER (DEVBASE 804000 +)
-\ (0x00000010) is (0000 0000 0000 0000 0000 0000 0001 0000) in BINARY
-\ Bit 4 is 1 -> Clear FIFO
+\ Ripristina FIFO utilizzando I2C_CONTROL_REGISTER (BASE 804000 +)
+\ HEX (0x00000010) è (0000 0000 0000 0000 0000 0000 0001 0000) in BIN
+\ Il bit 4 è 1 -> Cancella FIFO 
 : RESET_FIFO
-  10 DEVBASE 804000 + ! ;
+  10 BASE 804000 + ! ;
 
-\ Sets slave address 0x00000027 (Because our expander model is PCF8574T BLUE)
-\ into I2C_SLAVE_ADDRESS_REGISTER (DEVBASE 80400C +)
+\ Imposta l'indirizzo SLAVE 0x00000027 ( perché il nostro modello DRIVE è PCF8574T )
+\ in I2C_SLAVE_ADDRESS_REGISTER (BASE 80400C +) 
 : SET_SLAVE 
-  27 DEVBASE 80400C + ! ;
+  27 BASE 80400C + ! ;
 
-\ Stores data into I2C_DATA_FIFO_REGISTER_ADDRESS (DEVBASE 804010 +)
+\ Stores data into I2C_DATA_FIFO_REGISTER_ADDRESS (BASE 804010 +)
 : STORE_DATA
-  DEVBASE 804010 + ! ;
+  BASE 804010 + ! ;
 
-\ Starts a new transfer using I2C_CONTROL_REGISTER (DEVBASE 804000 +)
+\ Starts a new transfer using I2C_CONTROL_REGISTER (BASE 804000 +)
 \ (0x00008080) is (0000 0000 0000 0000 1000 0000 1000 0000) in BINARY
 \ Bit 0 is 0 -> Write Packet Transfer
 \ Bit 7 is 1 -> Start a new transfer
 \ Bit 15 is 1 -> BSC controller is enabled
 : SEND 
-  8080 DEVBASE 804000 + ! ;
+  8080 BASE 804000 + ! ;
 
 \ The main word to write 1 byte at a time
 : >I2C
   RESET_S
   RESET_FIFO
-  1 DEVBASE 804008 + !
+  1 BASE 804008 + !
   SET_SLAVE
   STORE_DATA
   SEND ;
@@ -233,9 +305,9 @@ DEVBASE 200058 + CONSTANT GPFEN0
 \ Università degli Studi di Palermo )
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
 
-\ Must be INCLUDEd after i2c.f
+\ includere dopo i2c.f
 
-\ Prints "welcome" to screen
+\ Stampa "welcome" a display
 : WELCOME
   57 >LCD 
   45 >LCD
@@ -243,9 +315,10 @@ DEVBASE 200058 + CONSTANT GPFEN0
   43 >LCD  
   4F >LCD
   4D >LCD
-  45 >LCD ;
+  45 >LCD 
+  20 >LCD ;
 
-\ Prints "not valid" to screen
+\ Stampa "NOT VALID" a display
 : NOT_VALID 
   4E >LCD
   4F >LCD
@@ -257,276 +330,335 @@ DEVBASE 200058 + CONSTANT GPFEN0
   49 >LCD
   44 >LCD ;
 
-: SMARTS 
+\ Stampa "SMART" a display
+: SMART 
     53 >LCD 
     4D >LCD
     41 >LCD
     52 >LCD  
     54 >LCD
-    20 >LCD
+    20 >LCD ;
+
+\ Stampa "CLIMA" a display
+: CLIMA 
+    43 >LCD 
+    4C >LCD
+    49 >LCD
+    4D >LCD  
+    41 >LCD
+    20 >LCD ;
+
+\ Stampa "SYSTEM"  a display
+  : SYSTEM 
     53 >LCD
     59 >LCD  
     53 >LCD
     54 >LCD
     45 >LCD
-    4D >LCD ;
+    4D >LCD
+    20 >LCD ;
+
+\ Stampa "READY" a display
+: READY 
+    52 >LCD 
+    45 >LCD
+    41 >LCD
+    44 >LCD  
+    59 >LCD 
+    20 >LCD ;
+
+\ Stampa "BUSY" a display
+: BUSY 
+    42 >LCD 
+    55 >LCD
+    53 >LCD
+    59 >LCD 
+    20 >LCD ;
+
+\ Stampa "LIGHT" a display
+: LIGHT 
+    4C >LCD 
+    49 >LCD
+    47 >LCD
+    48 >LCD 
+    54 >LCD
+    20 >LCD ;
+
+\ Stampa "WIND" a display
+: WIND 
+    57 >LCD 
+    49 >LCD
+    4E >LCD
+    44 >LCD 
+    20 >LCD ;
+
+\ Stampa "STOP" a display
+: STOP 
+    53 >LCD 
+    54 >LCD
+    4F >LCD
+    50 >LCD 
+    20 >LCD ;
 
 
-\ Clears the screen
+\ Cancella il display
 : CLEAR
   101 >LCD ;
 
-\ Moves the blinking cursor to second line
+\ Muove il cursore sulla seconda linea
 : >LINE2
   1C0 >LCD ;
 
-\ Shows a blinking cursor at first line
+\ Visualizza il cursore sulla prima linea
 : SETUP_LCD 
   102 >LCD ;
 \ Embedded Systems - Sistemi Embedded - 17873
-\ Setting commands 
+\ Led Drive 
 \ Università degli Studi di Palermo 
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 
 
-\ Must be INCLUDEd after lcd.f and pad.f
+\ Includere dopo il flie gpio.f e ans.f
 
-\ The constant to define the position of a command validator
-\ For this project a valid command contains a special character in the 3rd position of that command
-\ Example: 12A# is a valid command as it contains the predefined special character on the 3rd position
-\          06B3 is not a valid command as it does not contain the predefined special character
-\             on the 3rd position
-DEC
+\ LED GPIO SETTING IN HEX
+5 CONSTANT YELLOWLED
+6 CONSTANT REDLED
+C CONSTANT GREENLED
 
-CONSTANT OK_POS 3
+\ GPIO On e Off
+: ON ( pin -- ) 1 SWAP LSHIFT GPSET0 ! ;
+: OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
 
-\ The constant to define the position of an operation type
-\ A -> Device on
-\ B -> Device off
-\ Example: 12A# turns the device 12 on
-\          12B# turns the device 12 off
-CONSTANT OP_POS 2
+\ Setup Led abilita i GPIO come output
+: SETUP_LED 
+    REDLED GPFSELOUT! 
+    YELLOWLED GPFSELOUT!
+    GREENLED GPFSELOUT! ;
 
-\ The constant to define the position of a command validator
-\ For this project a valid command contains a special character in the 3rd position of that command
-\ Example: 12A# is a valid command as it contains the special character # (23 in HEX) on the 3rd position
-\          06B* is not a valid command as it does not contain the predefined special character # (23 in HEX)
-\             on the 3rd position
-CONSTANT OK_C 23
-
-\ Contants to define on and off operations
-\ Example: 12A# -> Device no 12 is ON
-\          12B# -> Device no 12 is OFF
-CONSTANT ON_C A
-CONSTANT OFF_C B
-CONSTANT GET_C C
-
-\ The number of the devices that the system supports (in HEX)
-\ Example: DEV_NO A will define the CONSTANT as 10 in DECIMAL
-CONSTANT DEV_NO 99
-
-\ Variable to store the (OK_POS + 1) length commands
-\ Changing the OK_POS CONSTANT will provide different length arrays
-CREATE D_CMDS
-D_CMDS OK_POS CELLS ALLOT
-
-\ Variable to store (DEV_NO) number of devices (in HEX)
-CREATE DEVS
-DEVS DEV_NO 1 - CELLS ALLOT
-
-\ Fetches the first 2 values stored in D_CMDS and converts it to a device number
-\ Example: D_CMDS-0 contains 3
-\          D_CMDS-1 contains E
-\          Leaves 3E on TOS
-: 2DEV 
-  D_CMDS @ 4 LSHIFT
-  D_CMDS CELL+ @ 
-  OR ;
-
-\ Sets a device on/off
-\ Example: ON_C D_SET -> Sets the device on
-\          OFF_C D_SET -> Sets the device off
-: D_SET 
-  >R DEVS 2DEV 4 * + R> SWAP ;
-
-\ Opens the given device
-\ Example: 1A >OPEN
-: >OPEN 
-  ON_C D_SET ! ;
-
-\ Closes the given device
-\ Example: 1A >CLOSE
-: >CLOSE 
-  OFF_C D_SET ! ;
-
-\ Returns the state of the given device, which tells you if it's open or closed
-\ Example: 1A <STATE
-: <STATE 
-  DEVS 2DEV 4 * + @ ;
-
-\ Decides if a given command is OK or not by checking the OK_C
-\   on the position OK_POS of that command
-\ Example: 64B# ?CMD
-: ?CMD
-  D_CMDS OK_POS 4 * + @ OK_C = ;
-
-: OP_TYPE 
-  D_CMDS OP_POS 4 * + @ DUP 
-  ON_C = IF 
-    DROP >OPEN
-  ELSE DUP OFF_C = IF 
-    DROP >CLOSE
-  ELSE GET_C = IF
-    <STATE
-  THEN THEN THEN ;
-
-\ Resets the D_CMDS VARIABLE by writing 0's
-CREATE AUX_I
-: RES_CMD 
-  0 AUX_I !
-  BEGIN 
-  D_CMDS AUX_I @ 4 * + ! 
-  AUX_I @ 1 + AUX_I !
-  AUX_I @ OK_POS 1 + = UNTIL ;
-
-\ Executes the given command if it is valid, else prints NOT_VALID on the screen
-: XCMD 
-  ?CMD IF 
-    OP_TYPE 
-    1000 DELAY 4F >LCD
-    1000 DELAY 4B >LCD
-  ELSE 
-    CLEAR 
-    1000 DELAY NOT_VALID 
-    3000 DELAY CLEAR
-  THEN 
+\ Accende tutti i led disattivando tutti gli attuatori ( NC interdetto )
+: ALL_LED_ON 
+  REDLED GPON!
+  YELLOWLED GPON!
+  GREENLED GPON!
 ;
 
+\Questa WORD attiva il led giallo
+: SYSTEMLIGHT YELLOWLED GPON! ;
+\Questa WORD attiva il led verde
+: SYSTEMWIND GREENLED GPON! ;
+
+\Questa WORD disattiva un pin
+: TURNOFF ( pin -- ) GPOFF! ;
+
+\Questa WORD disattiva il led giallo
+: STOPLIGHT YELLOWLED GPOFF! ;
+
+\Questa WORD disattiva il led verde
+: STOPWIND GREENLED GPOFF! ;
+
+\ Variabili temporali
+VARIABLE LIGHTIME 
+VARIABLE WINDTIME
+
+\Settaggi di default luce e vento in ms 800000 37SEC  400000 19SEC  200000 9SEC 
+420000 LIGHTIME !
+420000 WINDTIME !
 \ Embedded Systems - Sistemi Embedded - 17873
 \ Keypad 
 \ Università degli Studi di Palermo
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
 
-\ Must be INCLUDEd after lcd.f
+\ Includere dopo led.f
 
-\ For each row send an output
-\ For each column control the values
-\ If event detection bit is read we found the pressed key
-  \ in row-column format
-\ GPIO-18 -> Row-1 (1-2-3-A)
-\ GPIO-23 -> Row-2 (4-5-6-B)
-\ GPIO-24 -> Row-3 (7-8-9-C)
-\ GPIO-25 -> Row-4 (*-0-#-D)
-\ GPIO-16 -> Column-1 (A-B-C-D)
-\ GPIO-22 -> Column-2 (3-6-9-#)
-\ GPIO-27 -> Column-3 (2-5-8-0)
-\ GPIO-10 -> Column-4 (1-4-7-*)
+\ Per ogni riga inviare un output
+\ Per ogni colonna controllare i valori
+\ Se viene letto il bit di rilevamento dell'evento, abbiamo trovato il tasto premuto
+   \ nel formato RIGA-COLONNA
 
-\ Enables falling edge detection for the pins which control the rows
-  \ by writing 1 into corresponding pin positions (GPIO-18, 23, 24, 25)
-\ (0x03840000) is (0000 0011 1000 0100 0000 0000 0000 0000) in BINARY
+   \ MATRIX 5x4
+\ GPIO-17 -> Riga-1 (F1-F2-#-*)
+\ GPIO-18 -> Riga-1 (1-2-3-SU)
+\ GPIO-23 -> Riga-2 (4-5-6-GIU)
+\ GPIO-24 -> Riga-3 (7-8-9-ESC)
+\ GPIO-25 -> Riga-4 (SX-0-DX-ENT)
+\ GPIO-16 -> Colonna-1 (*-SU-GIU-ESC-ENT)
+\ GPIO-22 -> Colonna-2 (#-3-6-9-DX)
+\ GPIO-27 -> Colonna-3 (F2-2-5-8-0)
+\ GPIO-10 -> Colonna-4 (F1-1-4-7-SX) 
+
+\ Abilita il rilevamento del fronte di discesa per i pin che controllano le RIGHE
+   \ scrivendo 1 nelle posizioni dei pin corrispondenti (GPIO-18, 23, 24, 25)
+\ HEX (0x03840000) che è (0000 0011 1000 0100 0000 0000 0000 0000) in BIN 
 : SETUP_ROWS 
   3840000 GPFEN0 ! ;
 
-\ Row pins are output, column pins are input 
-\ GPFSEL1 field is used to define the operation of the pins GPIO-10 - GPIO-19
-\ GPFSEL2 field is used to define the operation of the pins GPIO-20 - GPIO-29
-\ Each 3-bits of the GPFSEL represents a GPIO pin
-\ In order to address GPIO-10, GPIO-16, and GPIO-18 we should operate on the bits position 
-  \ 2-1-0(GPIO-10), 20-19-18(GPIO-16) and 26-25-24(GPIO-18) storing the value into GPFSEL1
-\ In order to address GPIO-22, GPIO-23, GPIO-24, GPIO-25, and GPIO-27 we should operate on the bits position 
-  \ 8-7-6(GPIO-22), 11-10-9(GPIO-23), 14-13-12(GPIO-24), 17-16-15(GPIO-25), and 23-22-21(GPIO-27)
-  \ storing the value into GPFSEL2
-\ GPIO-18 is output -> 001
-\ GPIO-23 is output -> 001
-\ GPIO-24 is output -> 001
-\ GPIO-25 is output -> 001
-\ GPIO-16 is input -> 000
-\ GPIO-22 is input -> 000
-\ GPIO-27 is input -> 000
-\ GPIO-10 is input -> 000
-\ As a result we should write 
-\   (0001 0000 0000 0000 0000 0000 0000) into GPFSEL1_REGISTER_ADDRESS IN HEX(0x1000000)
-\   (0000 1001 0010 0000 0000) into GPFSEL2_REGISTER_ADDRESS IN HEX(0x9200)
+\ I pin RIGA sono impostati come output , i pin colonna sono impostati come input
+\ Il campo GPFSEL1 viene utilizzato per definire il funzionamento dei pin GPIO-10 - GPIO-19
+\ Il campo GPFSEL2 viene utilizzato per definire il funzionamento dei pin GPIO-20 - GPIO-29
+
+\ Ogni 3 bit di GPFSEL rappresenta un pin GPIO
+\ Per indirizzare GPIO-10, GPIO-17, GPIO-16 e GPIO-18 dovremmo operare sulla posizione dei bit
+   \ 2-1-0(GPIO-10), X-Y-Z(GPIO-17), 20-19-18(GPIO-16) e 26-25-24(GPIO-18) che memorizzano il valore in GPFSEL1
+
+\ Per indirizzare GPIO-22, GPIO-23, GPIO-24, GPIO-25 e GPIO-27 dovremmo operare sulla posizione dei bit
+   \ 8-7-6(GPIO-22), 11-10-9(GPIO-23), 14-13-12(GPIO-24), 17-16-15(GPIO-25) e 23-22- 21(GPIO-27)
+   \ memorizzazione del valore in GPFSEL2 
+
+\ GPIO-17 settato in output -> 001
+\ GPIO-18 settato in output -> 001
+\ GPIO-23 settato in output -> 001
+\ GPIO-24 settato in output -> 001
+\ GPIO-25 settato in output -> 001
+\ GPIO-16 settato in input -> 000
+\ GPIO-22 settato in input -> 000
+\ GPIO-27 settato in input -> 000
+\ GPIO-10 settato in input -> 000
+
+\ Di conseguenza dovremmo scrivere
+\ (0001 0000 0000 0000 0000 0000 0000) in GPFSEL1_REGISTER_ADDRESS che è in HEX(0x1000000)
+\ (0000 1001 0010 0000 0000) in GPFSEL2_REGISTER_ADDRESS che è in HEX(0x9200) 
 : SETUP_IO 
   1000000 GPFSEL1 @ OR GPFSEL1 ! 
   9200 GPFSEL2 @ OR GPFSEL2 ! ;
 
-\ Clear GPIO-18, GPIO-23, GPIO-24, and GPIO-25 using GPCLR0 register
-  \ by writing 1 into the corresponding positions
-\ (0x3840000) is (0011 1000 0100 0000 0000 0000 0000) in BINARY
+\ Cancella GPIO-17, GPIO-18, GPIO-23, GPIO-24 e GPIO-25 utilizzando il registro GPCLR0
+   \ scrivendo 1 nelle posizioni corrispondenti
+\ HEX (0x3840000) che è (0011 1000 0100 0000 0000 0000 0000) in BIN 
 : CLEAR_ROWS 
   3840000 GPCLR0 ! ;
 
-\ Helper WORD to setup the keypad 
+\ Definizione della WORD per inizializzare la tastiera 
 : SETUP_KEYPAD 
   SETUP_ROWS 
   SETUP_IO 
   CLEAR_ROWS ;
 
-\ Tests a pin, if it is pressed leaves 1 on the stack else 0
+\ Testa un pin, se viene premuto lascia 1 sullo stack altrimenti 0 
 : PRESSED 
   TPIN 1 = IF 1 ELSE 0 THEN ;
 
+3 CONSTANT RANGE 
+
+\ Variabile gestisce la terminazione del ciclo.
+\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
+VARIABLE FLAG
+\ Variabile per memorizzare il tempo decine di secondi.
+VARIABLE CAS
+VARIABLE COS
+\ Variabile per memorizzare il tempo unità di secondi.
+VARIABLE CASS
+VARIABLE COSS
+
+1 FLAG !
+
+\ Questo flag permette di gestire l'avvio del ciclo.
+: FLAGOFF  0 FLAG ! ; 
+
+\ Questo flag permette di gestire l'arresto del ciclo.
+: FLAGON  1 FLAG ! ; 
+
+\ Variabile Contatore
 CREATE COUNTER
 
-\ Increments the COUNTER variable by 1
+\ Incrementa di 1 la variabile COUNTER 
 : COUNTER++ 
   COUNTER @ 1 + COUNTER ! ;
 
-\ Stores the HEX value of a character in D_CMDS array and emits it to LCD
-\ Dupplicate the TOS and emit it
-\ Leave D_CMDS address on TOS
-\ Leave COUNTER value on TOS
-\ Leave the address of the COUNTER'th index of D_CMDS array on TOS
-\ Finally store the emitted HEX value to that address
-\ Example: 42 EMIT_STORE -> Prints B on LCD and stores it into D_CMDS[COUNTER_current_value]
+\ Variabile per memorizzare il tempo di lunghezza (RANGE + 1).
+\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
+  CREATE D_CMDS
+D_CMDS RANGE CELLS ALLOT
+
+2 D_CMDS !
+
+\ Recupera i primi 2 valori memorizzati in D_CMDS e li converte in un numero di secondi in dec
+\ esempio 20 su TOS 
+: 2DEV ( variable )
+  D_CMDS @ 4 LSHIFT 
+  D_CMDS CELL+ @ 
+  OR ;
+
+\ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
+\ Duplica il TOS ed emettilo
+\ Lascia l'indirizzo D_CMDS su TOS
+\ Lascia il valore COUNTER su TOS
+\ Lasciare l'indirizzo del COUNTER'esimo indice dell'array D_CMDS su TOS
+\ Infine memorizzare il valore DEC emesso a quell'indirizzo
+\ Esempio: 30 EMIT_STORE -> Stampa 0 su LCD e lo memorizza in D_CMDS[COUNTER_current_value] 
 : EMIT_STORE 
+  COUNTER @ 0 = IF LIGHT 1000 DELAY ELSE
+  COUNTER @ 2 = IF >LINE2 WIND 1000 DELAY
+  THEN THEN
   DUP 500 DELAY >LCD 
-  D_CMDS
-  COUNTER @ CELL+ * ! ;
+  DUP 30 -  \ . CONSUMA LO STACK  SOSTITUIRE CON    30 - DUP
+  DUP .
+ \ DUP CAS !
+ \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT LIGHTIME !
+ \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT WINDTIME !
 
-\ Emits one of the chars found on Column-1 checking the given Row number
-\ Example: 12 EMITC1 emits A (41 in HEX) to lcd
-\          19 EMITC1 emits D (44 in HEX) to lcd
+  DUP COUNTER @ 0 = IF DUP CAS ! DUP 2 * 4 LSHIFT LIGHTIME ! ELSE
+  DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + 8 LSHIFT 8 LSHIFT LIGHTIME ! ELSE
+  DUP COUNTER @ 2 = IF DUP COS ! DUP 2 * 4 LSHIFT WINDTIME !  ELSE
+  DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + 8 LSHIFT 8 LSHIFT WINDTIME !
+  THEN THEN THEN THEN
+\  D_CMDS COUNTER @ CELLS + ! 
+\  COUNTER @ D_CMDS ?
+\  LIGHTIME @ . ." <- "
+  ;
+
+\ Stampa uno dei caratteri trovati nella Colonna 1 controllando il numero di riga specificato con un ciclo condizionale
+\ Pin fisico Riga -> EMIT-Colonna
+\ Esempio: 12 EMTC1 stampa A (41 in HEX) su lcd
+\ 19 EMTC1 stampa D (44 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO17 = 11
 : EMITC1 
-  DUP 12 = IF 41 DUP EMIT_STORE DROP ELSE 
-  DUP 17 = IF 42 DUP EMIT_STORE DROP ELSE 
-  DUP 18 = IF 43 DUP EMIT_STORE DROP ELSE 
-  19 = IF 44 DUP EMIT_STORE 
-  THEN THEN THEN THEN ;
+  DUP 11 = IF 2A DUP EMIT_STORE DROP ELSE
+  DUP 12 = IF 5E DUP EMIT_STORE DROP ELSE 
+  DUP 17 = IF 5F DUP EMIT_STORE DROP ELSE 
+  DUP 18 = IF 1B DUP EMIT_STORE DROP ELSE 
+  19 = IF D DUP EMIT_STORE 
+  THEN THEN THEN THEN THEN ;
 
-\ Emits one of the chars found on Column-2 checking the given Row number
-\ Example: 12 EMITC2 emits 3 (33 in HEX) to lcd
-\          17 EMITC2 emits 6 (36 in HEX) to lcd
+\ Stampa uno dei caratteri trovati sulla Colonna 2 controllando il numero di riga specificato con un ciclo condizionale
+\ Pin fisico Riga -> EMIT-Colonna
+\ Esempio: 32 EMTC2 stampa # (23 in HEX) su lcd
+\ 17 EMTC2 stampa 6 (36 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO18 = 12
 : EMITC2 
+  DUP 11 = IF 23 DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 33 DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 36 DUP EMIT_STORE DROP ELSE 
   DUP 18 = IF 39 DUP EMIT_STORE DROP ELSE 
-  19 = IF 23 DUP EMIT_STORE 
-  THEN THEN THEN THEN ;
+  19 = IF 3E DUP EMIT_STORE 
+  THEN THEN THEN THEN THEN ;
 
-\ Emits one of the chars found on Column-3 checking the given Row number
-\ Example: 18 EMITC3 emits 8 (38 in HEX) to lcd
-\          19 EMITC3 emits 0 (30 in HEX) to lcd
+\ Stampa uno dei caratteri trovati sulla Colonna 3 controllando il numero di riga specificato con un ciclo condizionale
+\ Pin fisico Riga -> EMIT-Colonna
+\ Esempio: 18 EMTC2 stampa 8 (38 in HEX) su lcd
+\ 19 EMTC2 stampa 0 (30 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO17 = 11
 : EMITC3 
+  DUP 11 = IF 25 DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 32 DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 35 DUP EMIT_STORE DROP ELSE 
   DUP 18 = IF 38 DUP EMIT_STORE DROP ELSE 
   19 = IF 30 DUP EMIT_STORE 
-  THEN THEN THEN THEN ;
+  THEN THEN THEN THEN THEN ;
 
-\ Emits one of the chars found on Column-4 checking the given Row number
-\ Example: 12 EMITC4 emits 1 (31 in HEX) to lcd
-\          18 EMITC4 emits 7 (37 in HEX) to lcd
+\ Stampa uno dei caratteri trovati sulla Colonna 4 controllando il numero di riga specificato con un ciclo condizionale
+\ Pin fisico Riga -> EMIT-Colonna
+\ Esempio: 12 EMTC2 stampa 1 (31 in HEX) su lcd
+\ 18 EMTC2 stampa 7 (37 in HEX) su lcd 
+\ IL RIFERIMENTO DEL GPIO LO ABBIAMO IN HEX ES. GPIO18 = 12
 : EMITC4 
+  DUP 11 = IF 24 DUP EMIT_STORE DROP ELSE
   DUP 12 = IF 31 DUP EMIT_STORE DROP ELSE 
   DUP 17 = IF 34 DUP EMIT_STORE DROP ELSE 
   DUP 18 = IF 37 DUP EMIT_STORE DROP ELSE 
-  19 = IF 2A DUP EMIT_STORE 
-  THEN THEN THEN THEN ;
+  19 = IF 3C DUP EMIT_STORE 
+  THEN THEN THEN THEN THEN ;
 
-\ Emits the given Row-Column char combination using the corresponding EMITC1/C2/C3/C4 WORD
-\ Example: 12 10 EMIT_R
+\ Stampa la combinazione di caratteri Riga-Colonna specificata utilizzando la corrispondente WORD EMTC1/C2/C3/C4
+\ Esempio: 12 10 EMIT_R
 : EMIT_R
   DUP 10 = IF DROP EMITC1 ELSE 
   DUP 16 = IF DROP EMITC2 ELSE 
@@ -534,8 +666,8 @@ CREATE COUNTER
   A = IF EMITC4 
   THEN THEN THEN THEN ;
 
-\ Checks if a key of the given row is pressed, waits for it to be released
-\   and emits the corresponding HEX value to LCD
+\ Verifica se un tasto della riga data è premuto, attende il suo rilascio,
+\ e stampa il valore esadecimale corrispondente sull'LCD 
 : CHECK_CL 
   DUP DUP
     PRESSED 1 = IF 1000 DELAY 
@@ -547,11 +679,13 @@ CREATE COUNTER
     ELSE DROP DROP DROP 
   THEN ;
 
-\ Checks the given Row by setting it to HIGH, checking its Columns and setting it to LOW finally
-\ Example usage -> 12 CHECK_ROW (Checks the first row)
-\               -> 17 CHECK_ROW (Checks the second row)
-\               -> 18 CHECK_ROW (Checks the third row)
-\               -> 19 CHECK_ROW (Checks the fourth row)
+\ TODO
+\ Controlla la riga data impostandola su HIGH, controllandone le colonne e infine impostandola su LOW
+\ Esempio -> 32 CHECK_ROW (Controlla la prima riga)
+\         -> 12 CHECK_ROW (Controlla la seconda riga)
+\         -> 17 CHECK_ROW (Controlla la terza riga)
+\         -> 18 CHECK_ROW (Controlla la quarta riga)
+\         -> 19 CHECK_ROW (Controlla la quinta riga) 
 : CHECK_ROW
   DUP DUP DUP DUP DUP 
   HIGH  
@@ -567,31 +701,116 @@ CREATE COUNTER
 : RES_CTR 
   0 COUNTER ! ;
 
-\ The main WORD to detect any press/release event and eventually to emit the 
-\   corresponding char to LCD
-\ This WORD is called automatically when the SETUP WORD is called,
-\   so unless you set the Rows to LOW you do not need to use this WORD
+: ?CTF 
+  FLAG @ 0 = ;
+
+\ La main WORD per rilevare qualsiasi evento di PRESS/RELASE ed eventualmente stampa il
+\ carattere corrispondente su LCD
+\ Questa WORD deve essere chiamata all'avvio del SETUP,
+\ quindi, a meno che non si impostino le righe su LOW, non è necessario utilizzare questa WORD 
 : DETECT
+  CLEAR
   0 COUNTER !
   BEGIN 
+    11 CHECK_ROW
     12 CHECK_ROW
     17 CHECK_ROW
     18 CHECK_ROW
     19 CHECK_ROW
   ?CTR UNTIL 
-;
-: INIT
+  0  CR LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR ." RUN . . . " CR
+  ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR   \INSERIRE CAS
+  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  \INSERIRE CAS
+
+\ Reimposta la VARIABILE D_CMDS scrivendo 0
+\ Resets the D_CMDS VARIABLE by writing 0's
+CREATE AUX_I
+: RES_CMD 
+  0 AUX_I !
+  BEGIN 
+  D_CMDS AUX_I @ 4 * + ! 
+  AUX_I @ 1 + AUX_I !
+  AUX_I @ RANGE 1 + = UNTIL ;
+  
+HEX
+\ Aziona il Sistema Illuminazione
+: GO_LIGHT 
+  REDLED GPOFF!
+  STOPWIND
+  CLEAR
+  SYSTEM
+  LIGHT
+  SYSTEMLIGHT
+  ;
+
+\ Aziona il Sistema Ventilazione
+: GO_WIND 
+  REDLED GPOFF!
+  STOPLIGHT
+  CLEAR
+  SYSTEM
+  WIND
+  SYSTEMWIND
+  ;
+
+\ Sistema Arrestato
+: STOP_DISP 
+  ALL_LED_ON
+  CLEAR
+  SYSTEM
+  STOP
+  ;
+
+\ Esecuzione attuatori per 4 cicli. Il Flag viene modificato al 4 ciclio.
+: RUN 0 COUNTER ! 
+  BEGIN                   
+    FLAG @ 1 = WHILE GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ DELAY 
+      GO_WIND ." SYSTEM WIND " WINDTIME @ DELAY 
+      COUNTER++ 
+      COUNTER @ 4 = IF  FLAGOFF THEN
+      ." Cycle n° " 
+      COUNTER @ .
+      ." Flag setting " 
+      FLAG @ .
+      CR
+    REPEAT 
+  UNTIL STOP_DISP ;
+
+
+\ Main WORD che contiene settaggi di base e avvio del ciclo principale
+: SETUP
   SETUP_I2C
   SETUP_LCD
   SETUP_KEYPAD
+  SETUP_LED
   WELCOME
-  LINE2
-  SMARTS
+  >LINE2
+  SMART
+  CLIMA
   30000 DELAY
   CLEAR
-  BEGIN
+  STOP_DISP 
+  10000 DELAY
+    BEGIN
     RES_CMD
-    DETECT
-    1 0 = UNTIL
+    DETECT 
+    1 
+    RUN
+    FLAGOFF
+    ?CTF UNTIL FLAGON STOP_DISP 
     ;
 
+\ Solo setup Hardware per testing
+  : ONLY_SETUP
+  SETUP_I2C
+  SETUP_LCD
+  SETUP_KEYPAD
+  SETUP_LED
+    WELCOME
+  >LINE2
+  SMART
+  CLIMA
+  30000 DELAY
+  CLEAR
+  STOP_DISP
+  ;

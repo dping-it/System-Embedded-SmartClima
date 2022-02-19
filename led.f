@@ -5,39 +5,46 @@
 
 \ Includere dopo il flie gpio.f e ans.f
 
-DECIMAL
+\ LED GPIO SETTING IN HEX
+5 CONSTANT YELLOWLED
+6 CONSTANT REDLED
+C CONSTANT GREENLED
 
-\ LED GPIO SETTING IN DECIMAL
-5 CONSTANT REDLED
-6 CONSTANT YELLOWLED
-12 CONSTANT GREENLED
-
-
-
-: GPFSELn ( pinGPIO -- addrGPIO )
-    10 / 4 * \ GPIO_Register_n * Offset
-    GPFSEL0 + ; \ Base_Address + Offset
-: TRIPLET ( pin -- bitToShift )
-    10 mod 3 * ; \ How much shift for right the TRIPLET
-: MASK ( pinGPIO -- pinMask)
-    TRIPLET
-    7 SWAP LSHIFT INVERT ; \ Create and Invert the Mask
-
-\ ---------------------------------------------------------------------------------
-\ Set one PIN in IN/OUT/ALTFUNCn MODE
-\ Esempio d’uso: 13 PIN OUT MODE
-: PIN ( pin -- pin pin_addr_value )
-    DUP GPFSELn @ \ Fetch Value at the Pin_Address
-    OVER MASK AND ; \ Clean the Pin triplet
-: MODE ( pin pin_addr_value mode -- )
-    2 PICK TRIPLET LSHIFT \ Move the GPIOmode to correct triplet
-    OR \ pin_addr_value Update in MODE
-    SWAP GPFSELn ! ; \ Store Value in pin_addr
-\ ------------------------------------------------------------------------------
-\ GPIO Input
+\ GPIO On e Off
 : ON ( pin -- ) 1 SWAP LSHIFT GPSET0 ! ;
 : OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
 
-\ GPIO Input
-: ACTIVE ( pin -- pin ) GPFSELOUT! GPON! ;
-: DEACTIVE ( pin -- pin ) GPFSELOUT! GPOFF! ;
+\ Setup Led abilita i GPIO come output
+: SETUP_LED 
+    REDLED GPFSELOUT! 
+    YELLOWLED GPFSELOUT!
+    GREENLED GPFSELOUT! ;
+
+\ Accende tutti i led disattivando tutti gli attuatori ( NC interdetto )
+: ALL_LED_ON 
+  REDLED GPON!
+  YELLOWLED GPON!
+  GREENLED GPON!
+;
+
+\Questa WORD attiva il led giallo
+: SYSTEMLIGHT YELLOWLED GPON! ;
+\Questa WORD attiva il led verde
+: SYSTEMWIND GREENLED GPON! ;
+
+\Questa WORD disattiva un pin
+: TURNOFF ( pin -- ) GPOFF! ;
+
+\Questa WORD disattiva il led giallo
+: STOPLIGHT YELLOWLED GPOFF! ;
+
+\Questa WORD disattiva il led verde
+: STOPWIND GREENLED GPOFF! ;
+
+\ Variabili temporali
+VARIABLE LIGHTIME 
+VARIABLE WINDTIME
+
+\Settaggi di default luce e vento in ms 800000 37SEC  400000 19SEC  200000 9SEC 
+420000 LIGHTIME !
+420000 WINDTIME !

@@ -17,27 +17,40 @@
 : ALIGN HERE @ ALIGNED HERE ! ;
 : C, HERE @ C! 1 HERE +! ;
 : S" IMMEDIATE ( -- addr len )
-	STATE @ IF
-		' LITS , HERE @ 0 ,
-		BEGIN KEY DUP '"'
+    STATE @ IF
+        ' LITS , HERE @ 0 ,
+        BEGIN KEY DUP '"'
                 <> WHILE C, REPEAT
-		DROP DUP HERE @ SWAP - 4- SWAP ! ALIGN
-	ELSE
-		HERE @
-		BEGIN KEY DUP '"'
+        DROP DUP HERE @ SWAP - 4- SWAP ! ALIGN
+    ELSE
+        HERE @
+        BEGIN KEY DUP '"'
                 <> WHILE OVER C! 1+ REPEAT
-		DROP HERE @ - HERE @ SWAP
-	THEN
+        DROP HERE @ - HERE @ SWAP
+    THEN
 ;
 
 : ." IMMEDIATE ( -- )
-	STATE @ IF
-		[COMPILE] S" ' TELL ,
-	ELSE
-		BEGIN KEY DUP '"' = IF DROP EXIT THEN EMIT AGAIN
-	THEN
+    STATE @ IF
+        [COMPILE] S" ' TELL ,
+    ELSE
+        BEGIN KEY DUP '"' = IF DROP EXIT THEN EMIT AGAIN
+    THEN
 ;
 
+: EXCEPTION-MARKER RDROP 0 ;
+: CATCH ( xt -- exn? ) DSP@ 4+ >R ' EXCEPTION-MARKER 4+ >R EXECUTE ;
+: THROW ( n -- ) ?DUP IF
+    RSP@ BEGIN DUP R0 4-
+        < WHILE DUP @ ' EXCEPTION-MARKER 4+
+        = IF 4+ RSP! DUP DUP DUP R> 4- SWAP OVER ! DSP! EXIT THEN
+    4+ REPEAT DROP
+    CASE
+        0 1- OF ." ABORTED" CR ENDOF
+        ." UNCAUGHT THROW " DUP . CR
+    ENDCASE QUIT THEN
+;
+: ABORT ( -- ) 0 1- THROW ;
 
 : JF-HERE   HERE ;
 : JF-CREATE   CREATE ;
@@ -69,9 +82,9 @@ DROP
 
 \ Ritorna informazioni sull'autore delle modifiche
 : AUTHOR
-	S" TEST-MODE" FIND NOT IF
-		." AUTHOR DAVIDE PROIETTO " VERSION . CR
-		UNUSED . ." CELLS REMAINING" CR
-		." OK "
-	THEN
+    S" TEST-MODE" FIND NOT IF
+        ." AUTHOR DAVIDE PROIETTO " VERSION . CR
+        UNUSED . ." CELLS REMAINING" CR
+        ." OK "
+    THEN
 ;

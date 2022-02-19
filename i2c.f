@@ -40,7 +40,6 @@
 : SETUP_I2C 
   900 GPFSEL0 @ OR GPFSEL0 ! ;
 
-
 \ Ripristina lo Status Register utilizzando I2C_STATUS_REGISTER (BASE 804004 +)
 \ HEX (0x00000302) è (0000 0000 0000 0000 0000 0011 0000 0010) in BIN
 \ Il bit 1 è 1 -> Cancella campo DONE

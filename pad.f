@@ -3,7 +3,7 @@
 \ Università degli Studi di Palermo
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
 
-\ Includere dopo set.f
+\ Includere dopo led.f
 
 \ Per ogni riga inviare un output
 \ Per ogni colonna controllare i valori
@@ -62,7 +62,7 @@
 : CLEAR_ROWS 
   3840000 GPCLR0 ! ;
 
-\ Definizione della WORD per inizzializzare la tastiera 
+\ Definizione della WORD per inizializzare la tastiera 
 : SETUP_KEYPAD 
   SETUP_ROWS 
   SETUP_IO 
@@ -72,6 +72,26 @@
 : PRESSED 
   TPIN 1 = IF 1 ELSE 0 THEN ;
 
+3 CONSTANT RANGE 
+
+\ Variabile gestisce la terminazione del ciclo.
+\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
+VARIABLE FLAG
+\ Variabile per memorizzare il tempo decine di secondi.
+VARIABLE CAS
+VARIABLE COS
+\ Variabile per memorizzare il tempo unità di secondi.
+VARIABLE CASS
+VARIABLE COSS
+
+1 FLAG !
+
+\ Questo flag permette di gestire l'avvio del ciclo.
+: FLAGOFF  0 FLAG ! ; 
+
+\ Questo flag permette di gestire l'arresto del ciclo.
+: FLAGON  1 FLAG ! ; 
+
 \ Variabile Contatore
 CREATE COUNTER
 
@@ -79,17 +99,47 @@ CREATE COUNTER
 : COUNTER++ 
   COUNTER @ 1 + COUNTER ! ;
 
-\ Memorizza il valore esadecimale di un carattere nell'array D_CMDS e lo visualizza sul LCD
-\ Duplica il TOS ed lo stampa
+\ Variabile per memorizzare il tempo di lunghezza (RANGE + 1).
+\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
+  CREATE D_CMDS
+D_CMDS RANGE CELLS ALLOT
+
+2 D_CMDS !
+
+\ Recupera i primi 2 valori memorizzati in D_CMDS e li converte in un numero di secondi in dec
+\ esempio 20 su TOS 
+: 2DEV ( variable )
+  D_CMDS @ 4 LSHIFT 
+  D_CMDS CELL+ @ 
+  OR ;
+
+\ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
+\ Duplica il TOS ed emettilo
 \ Lascia l'indirizzo D_CMDS su TOS
 \ Lascia il valore COUNTER su TOS
 \ Lasciare l'indirizzo del COUNTER'esimo indice dell'array D_CMDS su TOS
-\ Infine memorizzare il valore HEX emesso a quell'indirizzo
-\ Esempio: 42 EMIT_STORE -> Stampa B su LCD e lo memorizza in D_CMDS[COUNTER_current_value] 
+\ Infine memorizzare il valore DEC emesso a quell'indirizzo
+\ Esempio: 30 EMIT_STORE -> Stampa 0 su LCD e lo memorizza in D_CMDS[COUNTER_current_value] 
 : EMIT_STORE 
+  COUNTER @ 0 = IF LIGHT 1000 DELAY ELSE
+  COUNTER @ 2 = IF >LINE2 WIND 1000 DELAY
+  THEN THEN
   DUP 500 DELAY >LCD 
-  D_CMDS
-  COUNTER @ CELL+ * ! ;
+  DUP 30 -  \ . CONSUMA LO STACK  SOSTITUIRE CON    30 - DUP
+  DUP .
+ \ DUP CAS !
+ \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT LIGHTIME !
+ \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT WINDTIME !
+
+  DUP COUNTER @ 0 = IF DUP CAS ! DUP 2 * 4 LSHIFT LIGHTIME ! ELSE
+  DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + 8 LSHIFT 8 LSHIFT LIGHTIME ! ELSE
+  DUP COUNTER @ 2 = IF DUP COS ! DUP 2 * 4 LSHIFT WINDTIME !  ELSE
+  DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + 8 LSHIFT 8 LSHIFT WINDTIME !
+  THEN THEN THEN THEN
+\  D_CMDS COUNTER @ CELLS + ! 
+\  COUNTER @ D_CMDS ?
+\  LIGHTIME @ . ." <- "
+  ;
 
 \ Stampa uno dei caratteri trovati nella Colonna 1 controllando il numero di riga specificato con un ciclo condizionale
 \ Pin fisico Riga -> EMIT-Colonna
@@ -182,17 +232,20 @@ CREATE COUNTER
   LOW ;
 
 : ?CTR 
-  COUNTER @ 5 = ;
+  COUNTER @ 4 = ;
 
 : RES_CTR 
   0 COUNTER ! ;
 
+: ?CTF 
+  FLAG @ 0 = ;
 
 \ La main WORD per rilevare qualsiasi evento di PRESS/RELASE ed eventualmente stampa il
 \ carattere corrispondente su LCD
 \ Questa WORD deve essere chiamata all'avvio del SETUP,
 \ quindi, a meno che non si impostino le righe su LOW, non è necessario utilizzare questa WORD 
 : DETECT
+  CLEAR
   0 COUNTER !
   BEGIN 
     11 CHECK_ROW
@@ -200,4 +253,18 @@ CREATE COUNTER
     17 CHECK_ROW
     18 CHECK_ROW
     19 CHECK_ROW
-  ?CTR UNTIL LCDCLEAR ;
+  ?CTR UNTIL 
+  0  CR LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR ." RUN . . . " CR
+  ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR   \INSERIRE CAS
+  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  \INSERIRE CAS
+
+\ Reimposta la VARIABILE D_CMDS scrivendo 0
+\ Resets the D_CMDS VARIABLE by writing 0's
+CREATE AUX_I
+: RES_CMD 
+  0 AUX_I !
+  BEGIN 
+  D_CMDS AUX_I @ 4 * + ! 
+  AUX_I @ 1 + AUX_I !
+  AUX_I @ RANGE 1 + = UNTIL ;
+  
