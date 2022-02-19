@@ -59,19 +59,19 @@
 : SET_SLAVE 
   27 BASE 80400C + ! ;
 
-\ Stores data into I2C_DATA_FIFO_REGISTER_ADDRESS (BASE 804010 +)
+\ Memorizza i dati in I2C_DATA_FIFO_REGISTER_ADDRESS (BASE 804010 +)
 : STORE_DATA
   BASE 804010 + ! ;
 
-\ Starts a new transfer using I2C_CONTROL_REGISTER (BASE 804000 +)
-\ (0x00008080) is (0000 0000 0000 0000 1000 0000 1000 0000) in BINARY
-\ Bit 0 is 0 -> Write Packet Transfer
-\ Bit 7 is 1 -> Start a new transfer
-\ Bit 15 is 1 -> BSC controller is enabled
+\ Avvia un nuovo trasferimento utilizzando I2C_CONTROL_REGISTER (BASE 804000 +)
+\ (0x00008080) è (0000 0000 0000 0000 1000 0000 1000 0000) in BINARIO
+\ Il bit 0 è 0 -> Scrivi trasferimento pacchetti
+\ Il bit 7 è 1 -> Avvia un nuovo trasferimento
+\ Il bit 15 è 1 -> Il controller BSC è abilitato
 : SEND 
   8080 BASE 804000 + ! ;
 
-\ The main word to write 1 byte at a time
+\ La parola principale per scrivere 1 byte alla volta
 : >I2C
   RESET_S
   RESET_FIFO
@@ -80,13 +80,13 @@
   STORE_DATA
   SEND ;
 
-\ Sends 4 most significant bits left of TOS
+\ Invia i 4 bit più significativi rimasti di TOS
 : 4BM>LCD 
   F0 AND DUP ROT
   D + OR >I2C 1000 DELAY
   8 OR >I2C 1000 DELAY ;
 
-\ Sends 4 least significant bits left of TOS
+\ Invia 4 bit meno significativi rimasti di TOS
 : 4BL>LCD 
   F0 AND DUP
   D + OR >I2C 1000 DELAY
@@ -103,11 +103,11 @@
 : IS_CMD 
   DUP 8 RSHIFT 1 = ;
 
-\ Decides if we are sending a command or a data to I2C
-\ Commands has an extra 1 at the most significant bit compared to data
-\ An input like 101 >LCD would be considered a COMMAND to clear the screen
-\   wheres an input like 41 >LCD would be considered a DATA to send the A CHAR (41 in hex)
-\   to the screen
+\ Decide se stiamo inviando un comando o un dato a I2C
+\ Commands ha un 1 in più nel bit più significativo rispetto ai dati
+\ Un input come 101 >LCD sarebbe considerato un COMANDO per cancellare lo schermo
+\ dove un input come 41 >LCD sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
+\ allo schermo
 : >LCD 
   IS_CMD SWAP >LCDM 
 ;

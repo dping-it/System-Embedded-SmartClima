@@ -3,6 +3,11 @@
 \ from  pijFORTHos
 \ modificated by Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
 
+\ '\n'	newline character (10)
+: '\n' 10 ;
+\ BL	blank character (32)
+: BL 32 ;
+
 : ':' [ CHAR : ] LITERAL ;
 : ';' [ CHAR ; ] LITERAL ;
 : '(' [ CHAR ( ] LITERAL ;
@@ -10,6 +15,14 @@
 : '"' [ CHAR " ] LITERAL ;
 : '.' [ CHAR . ] LITERAL ;
 
+\ ?IMMEDIATE	( entry -- p )	get IMMEDIATE flag from dictionary entry
+\ ( comment text ) 	( -- )	comment inside definition
+\ SPACES	( n -- )	print n spaces
+\ WITHIN	( a b c -- p )	where p = ((a >= b) && (a < c))
+\ ALIGNED	( addr -- addr' )	round addr up to next 4-byte boundary
+\ ALIGN	( -- )	align the HERE pointer
+\ C,	( c -- )	write a byte from the stack at HERE
+\ S" string"	( -- addr len )	create a string value
 : ( IMMEDIATE 1 BEGIN KEY DUP '(' = IF DROP 1+ ELSE ')' = IF 1- THEN THEN DUP 0= UNTIL DROP ;
 : SPACES BEGIN DUP 0> WHILE SPACE 1- REPEAT DROP ;
 : WITHIN -ROT OVER <= IF > IF TRUE ELSE FALSE THEN ELSE 2DROP FALSE THEN ;
@@ -30,6 +43,7 @@
     THEN
 ;
 
+\ ." string"	( -- )	print string
 : ." IMMEDIATE ( -- )
     STATE @ IF
         [COMPILE] S" ' TELL ,
@@ -55,17 +69,19 @@
 : JF-HERE   HERE ;
 : JF-CREATE   CREATE ;
 : JF-FIND   FIND ;
+
+\ JF-WORDS	( -- )	print all the words defined in the dictionary
 : JF-WORD   WORD ;
 
 : HERE   JF-HERE @ ;
 : ALLOT   HERE + JF-HERE ! ;
 
+\ ['] name	( -- xt )	compile LIT
 : [']   ' LIT , ; IMMEDIATE
 : '   JF-WORD JF-FIND >CFA ;
 
 : CELL+  4 + ;
 
-: ALIGNED   3 + 3 INVERT AND ;
 : ALIGN JF-HERE @ ALIGNED JF-HERE ! ;
 
 : DOES>CUT   LATEST @ >CFA @ DUP JF-HERE @ > IF JF-HERE ! ;
@@ -77,6 +93,20 @@
 : DOES>INT   (DODOES-INT) LATEST @ HIDDEN ] ;
 : DOES>   STATE @ 0= IF DOES>INT ELSE DOES>COMP THEN ; IMMEDIATE
 : UNUSED ( -- n ) PAD HERE @ - 4/ ;
+
+\ Control Structures
+\ Word	Stack	Description
+\ EXIT	( -- )	restore FIP and return to caller
+\ BRANCH offset	( -- )	change FIP by following offset
+\ 0BRANCH offset	( p -- )	branch if the top of the stack is zero
+\ IF true-part THEN	( p -- )	conditional execution
+\ IF true-part ELSE false-part THEN	( p -- )	conditional execution
+\ UNLESS false-part ...	( p -- )	same as NOT IF
+\ BEGIN loop-part p UNTIL	( -- )	post-test loop
+\ BEGIN loop-part AGAIN	( -- )	infinite loop (until EXIT)
+\ BEGIN p WHILE loop-part REPEAT	( -- )	pre-test loop
+\ CASE cases... default ENDCASE	( selector -- )	select case based on selector value
+\ value OF case-body ENDOF	( -- )	execute case-body if (selector == value)
 
 DROP
 

@@ -46,7 +46,7 @@ BASE 200058 + CONSTANT GPFEN0
 
 DECIMAL
 
-\ GPIO ( n -- n ) takes GPIO pin number and test if is lower then 27 otherwise abort
+\ GPIO ( n -- n ) prende il numero pin GPIO e verifica se è inferiore a 27, altrimenti interrompe
 : GPIO DUP 30 > IF ABORT THEN ;
 
 \ MODE ( n -- a b c) prende il numero del pin GPIO e lascia nello stack il numero del bit di spostamento a sinistra (a) richiesto per impostare i corrispondenti bit di controllo GPIO di GPFSELN,
