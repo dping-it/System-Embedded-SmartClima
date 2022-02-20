@@ -1,6 +1,6 @@
 \ Embedded Systems - Sistemi Embedded - 17873
 \ some dictionary definitions
-\ from  pijFORTHos
+\ from  pijFORTHos and prof. D. Peri
 \ modificated by Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
 
 \ '\n'	newline character (10)

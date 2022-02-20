@@ -1,5 +1,5 @@
 \ Embedded Systems - Sistemi Embedded - 17873)
-\ LCD Setup e messages for LCD 1602 )
+\ LCD Setup paraole per la compilazione di messaggi su LCD 1602 )
 \ Università degli Studi di Palermo )
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
 
@@ -15,18 +15,6 @@
   4D >LCD
   45 >LCD 
   20 >LCD ;
-
-\ Stampa "NOT VALID" a display
-: NOT_VALID 
-  4E >LCD
-  4F >LCD
-  54 >LCD
-  20 >LCD
-  56 >LCD
-  41 >LCD
-  4C >LCD
-  49 >LCD
-  44 >LCD ;
 
 \ Stampa "SMART" a display
 : SMART 
@@ -98,6 +86,23 @@
     50 >LCD 
     20 >LCD ;
 
+\ Stampa "INSERT" a display
+: INSERT 
+    49 >LCD
+    4E >LCD
+    53 >LCD 
+    45 >LCD
+    52 >LCD
+    54 >LCD
+    20 >LCD ;
+
+\ Stampa "TIME" a display
+: TIME 
+    54 >LCD
+    49 >LCD
+    4D >LCD 
+    45 >LCD
+    20 >LCD ;
 
 \ Cancella il display
 : CLEAR

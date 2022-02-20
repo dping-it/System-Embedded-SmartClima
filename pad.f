@@ -75,7 +75,6 @@
 3 CONSTANT RANGE 
 
 \ Variabile gestisce la terminazione del ciclo.
-\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
 VARIABLE FLAG
 \ Variabile per memorizzare il tempo decine di secondi.
 VARIABLE CAS
@@ -99,21 +98,7 @@ CREATE COUNTER
 : COUNTER++ 
   COUNTER @ 1 + COUNTER ! ;
 
-\ Variabile per memorizzare il tempo di lunghezza (RANGE + 1).
-\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
-  CREATE D_CMDS
-D_CMDS RANGE CELLS ALLOT
-
-2 D_CMDS !
-
-\ Recupera i primi 2 valori memorizzati in D_CMDS e li converte in un numero di secondi in dec
-\ esempio 20 su TOS 
-: 2DEV ( variable )
-  D_CMDS @ 4 LSHIFT 
-  D_CMDS CELL+ @ 
-  OR ;
-
-\ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
+ \ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
 \ Duplica il TOS ed emettilo
 \ Lascia l'indirizzo D_CMDS su TOS
 \ Lascia il valore COUNTER su TOS
@@ -125,20 +110,15 @@ D_CMDS RANGE CELLS ALLOT
   COUNTER @ 2 = IF >LINE2 WIND 1000 DELAY
   THEN THEN
   DUP 500 DELAY >LCD 
-  DUP 30 -  \ . CONSUMA LO STACK  SOSTITUIRE CON    30 - DUP
+  DUP 30 -  \ . CONSUMA LO STACK
   DUP .
- \ DUP CAS !
- \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT LIGHTIME !
- \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT WINDTIME !
+  DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF ABORT ELSE \
 
   DUP COUNTER @ 0 = IF DUP CAS ! DUP 2 * 4 LSHIFT LIGHTIME ! ELSE
   DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + 8 LSHIFT 8 LSHIFT LIGHTIME ! ELSE
   DUP COUNTER @ 2 = IF DUP COS ! DUP 2 * 4 LSHIFT WINDTIME !  ELSE
   DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + 8 LSHIFT 8 LSHIFT WINDTIME !
-  THEN THEN THEN THEN
-\  D_CMDS COUNTER @ CELLS + ! 
-\  COUNTER @ D_CMDS ?
-\  LIGHTIME @ . ." <- "
+  THEN THEN THEN THEN THEN
   ;
 
 \ Stampa uno dei caratteri trovati nella Colonna 1 controllando il numero di riga specificato con un ciclo condizionale
@@ -255,16 +235,5 @@ D_CMDS RANGE CELLS ALLOT
     19 CHECK_ROW
   ?CTR UNTIL 
   0  CR LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR ." RUN . . . " CR
-  ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR   \INSERIRE CAS
-  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  \INSERIRE CAS
-
-\ Reimposta la VARIABILE D_CMDS scrivendo 0
-\ Resets the D_CMDS VARIABLE by writing 0's
-CREATE AUX_I
-: RES_CMD 
-  0 AUX_I !
-  BEGIN 
-  D_CMDS AUX_I @ 4 * + ! 
-  AUX_I @ 1 + AUX_I !
-  AUX_I @ RANGE 1 + = UNTIL ;
-  
+  ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR  
+  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  

@@ -41,7 +41,7 @@ HEX
       FLAG @ .
       CR
     REPEAT 
-  UNTIL STOP_DISP ;
+  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
 \ Main WORD che contiene settaggi di base e avvio del ciclo principale
@@ -50,6 +50,7 @@ HEX
   SETUP_LCD
   SETUP_KEYPAD
   SETUP_LED
+  CLEAR
   WELCOME
   >LINE2
   SMART
@@ -58,14 +59,17 @@ HEX
   CLEAR
   STOP_DISP 
   10000 DELAY
+  CLEAR
+  INSERT TIME
+  30000 DELAY
     BEGIN
-    RES_CMD
+    FLAGON
     DETECT 
     1 
-    RUN
-    FLAGOFF
-    ?CTF UNTIL FLAGON STOP_DISP 
+    RUN 20000 DELAY
+    ?CTF UNTIL 
     ;
+
 
 \ Solo setup Hardware per testing
   : ONLY_SETUP
@@ -73,7 +77,8 @@ HEX
   SETUP_LCD
   SETUP_KEYPAD
   SETUP_LED
-    WELCOME
+  CLEAR
+  WELCOME
   >LINE2
   SMART
   CLIMA

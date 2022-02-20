@@ -1,5 +1,5 @@
 \ Embedded Systems - Sistemi Embedded - 17873
-\ Led Drive 
+\ Leds Drive 
 \ Università degli Studi di Palermo 
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 
 
