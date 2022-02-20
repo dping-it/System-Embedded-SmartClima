@@ -28,7 +28,8 @@ HEX
   STOP
   ;
 
-\ Esecuzione attuatori per 4 cicli. Il Flag viene modificato al 4 ciclio.
+\ Esecuzione attuatori per 4 cicli. Il Flag di fine procedura viene modificato al 4 ciclio.
+\ Al termine il programma si rimette in configurazione d'immissione dati.
 : RUN 0 COUNTER ! 
   BEGIN                   
     FLAG @ 1 = WHILE GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ DELAY 
@@ -44,7 +45,10 @@ HEX
   ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
-\ Main WORD che contiene settaggi di base e avvio del ciclo principale
+\ Main WORD che contiene settaggi di base e avvio del ciclo principale:
+\ Vengono avviati i setup per il Bus I2C per inizializzare l'LCD, la Keypad, led e gli attuatori.
+\ A questo punto parte il messaggio di benvenuto e inizia il ciclo infinito:
+\ Sarà necessario introdurre il tempo di esecuzione degli adattatori espresso in secondi ( 2 cifre per illuminazione e 2 cifre per il vento);
 : SETUP
   SETUP_I2C
   SETUP_LCD
