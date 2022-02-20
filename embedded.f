@@ -1,7 +1,12 @@
 \ Embedded Systems - Sistemi Embedded - 17873
 \ some dictionary definitions
-\ from  pijFORTHos
+\ from  pijFORTHos and prof. D. Peri
 \ modificated by Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
+
+\ '\n'	newline character (10)
+: '\n' 10 ;
+\ BL	blank character (32)
+: BL 32 ;
 
 : ':' [ CHAR : ] LITERAL ;
 : ';' [ CHAR ; ] LITERAL ;
@@ -10,6 +15,14 @@
 : '"' [ CHAR " ] LITERAL ;
 : '.' [ CHAR . ] LITERAL ;
 
+\ ?IMMEDIATE	( entry -- p )	get IMMEDIATE flag from dictionary entry
+\ ( comment text ) 	( -- )	comment inside definition
+\ SPACES	( n -- )	print n spaces
+\ WITHIN	( a b c -- p )	where p = ((a >= b) && (a < c))
+\ ALIGNED	( addr -- addr' )	round addr up to next 4-byte boundary
+\ ALIGN	( -- )	align the HERE pointer
+\ C,	( c -- )	write a byte from the stack at HERE
+\ S" string"	( -- addr len )	create a string value
 : ( IMMEDIATE 1 BEGIN KEY DUP '(' = IF DROP 1+ ELSE ')' = IF 1- THEN THEN DUP 0= UNTIL DROP ;
 : SPACES BEGIN DUP 0> WHILE SPACE 1- REPEAT DROP ;
 : WITHIN -ROT OVER <= IF > IF TRUE ELSE FALSE THEN ELSE 2DROP FALSE THEN ;
@@ -30,6 +43,7 @@
     THEN
 ;
 
+\ ." string"	( -- )	print string
 : ." IMMEDIATE ( -- )
     STATE @ IF
         [COMPILE] S" ' TELL ,
@@ -55,17 +69,19 @@
 : JF-HERE   HERE ;
 : JF-CREATE   CREATE ;
 : JF-FIND   FIND ;
+
+\ JF-WORDS	( -- )	print all the words defined in the dictionary
 : JF-WORD   WORD ;
 
 : HERE   JF-HERE @ ;
 : ALLOT   HERE + JF-HERE ! ;
 
+\ ['] name	( -- xt )	compile LIT
 : [']   ' LIT , ; IMMEDIATE
 : '   JF-WORD JF-FIND >CFA ;
 
 : CELL+  4 + ;
 
-: ALIGNED   3 + 3 INVERT AND ;
 : ALIGN JF-HERE @ ALIGNED JF-HERE ! ;
 
 : DOES>CUT   LATEST @ >CFA @ DUP JF-HERE @ > IF JF-HERE ! ;
@@ -78,6 +94,20 @@
 : DOES>   STATE @ 0= IF DOES>INT ELSE DOES>COMP THEN ; IMMEDIATE
 : UNUSED ( -- n ) PAD HERE @ - 4/ ;
 
+\ Control Structures
+\ Word	Stack	Description
+\ EXIT	( -- )	restore FIP and return to caller
+\ BRANCH offset	( -- )	change FIP by following offset
+\ 0BRANCH offset	( p -- )	branch if the top of the stack is zero
+\ IF true-part THEN	( p -- )	conditional execution
+\ IF true-part ELSE false-part THEN	( p -- )	conditional execution
+\ UNLESS false-part ...	( p -- )	same as NOT IF
+\ BEGIN loop-part p UNTIL	( -- )	post-test loop
+\ BEGIN loop-part AGAIN	( -- )	infinite loop (until EXIT)
+\ BEGIN p WHILE loop-part REPEAT	( -- )	pre-test loop
+\ CASE cases... default ENDCASE	( selector -- )	select case based on selector value
+\ value OF case-body ENDOF	( -- )	execute case-body if (selector == value)
+
 DROP
 
 \ Ritorna informazioni sull'autore delle modifiche
@@ -89,7 +119,7 @@ DROP
     THEN
 ;
 \ Embedded Systems - Sistemi Embedded - 17873
-\ Setting GPIO 
+\ Settaggi GPIO 
 \ Università degli Studi di Palermo 
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 
 
@@ -136,7 +166,7 @@ BASE 200058 + CONSTANT GPFEN0
 
 DECIMAL
 
-\ GPIO ( n -- n ) takes GPIO pin number and test if is lower then 27 otherwise abort
+\ GPIO ( n -- n ) prende il numero pin GPIO e verifica se è inferiore a 27, altrimenti interrompe
 : GPIO DUP 30 > IF ABORT THEN ;
 
 \ MODE ( n -- a b c) prende il numero del pin GPIO e lascia nello stack il numero del bit di spostamento a sinistra (a) richiesto per impostare i corrispondenti bit di controllo GPIO di GPFSELN,
@@ -248,19 +278,19 @@ HEX
 : SET_SLAVE 
   27 BASE 80400C + ! ;
 
-\ Stores data into I2C_DATA_FIFO_REGISTER_ADDRESS (BASE 804010 +)
+\ Memorizza i dati in I2C_DATA_FIFO_REGISTER_ADDRESS (BASE 804010 +)
 : STORE_DATA
   BASE 804010 + ! ;
 
-\ Starts a new transfer using I2C_CONTROL_REGISTER (BASE 804000 +)
-\ (0x00008080) is (0000 0000 0000 0000 1000 0000 1000 0000) in BINARY
-\ Bit 0 is 0 -> Write Packet Transfer
-\ Bit 7 is 1 -> Start a new transfer
-\ Bit 15 is 1 -> BSC controller is enabled
+\ Avvia un nuovo trasferimento utilizzando I2C_CONTROL_REGISTER (BASE 804000 +)
+\ (0x00008080) è (0000 0000 0000 0000 1000 0000 1000 0000) in BINARIO
+\ Il bit 0 è 0 -> Scrivi trasferimento pacchetti
+\ Il bit 7 è 1 -> Avvia un nuovo trasferimento
+\ Il bit 15 è 1 -> Il controller BSC è abilitato
 : SEND 
   8080 BASE 804000 + ! ;
 
-\ The main word to write 1 byte at a time
+\ La parola principale per scrivere 1 byte alla volta
 : >I2C
   RESET_S
   RESET_FIFO
@@ -269,13 +299,13 @@ HEX
   STORE_DATA
   SEND ;
 
-\ Sends 4 most significant bits left of TOS
+\ Invia i 4 bit più significativi rimasti di TOS
 : 4BM>LCD 
   F0 AND DUP ROT
   D + OR >I2C 1000 DELAY
   8 OR >I2C 1000 DELAY ;
 
-\ Sends 4 least significant bits left of TOS
+\ Invia 4 bit meno significativi rimasti di TOS
 : 4BL>LCD 
   F0 AND DUP
   D + OR >I2C 1000 DELAY
@@ -292,16 +322,16 @@ HEX
 : IS_CMD 
   DUP 8 RSHIFT 1 = ;
 
-\ Decides if we are sending a command or a data to I2C
-\ Commands has an extra 1 at the most significant bit compared to data
-\ An input like 101 >LCD would be considered a COMMAND to clear the screen
-\   wheres an input like 41 >LCD would be considered a DATA to send the A CHAR (41 in hex)
-\   to the screen
+\ Decide se stiamo inviando un comando o un dato a I2C
+\ Commands ha un 1 in più nel bit più significativo rispetto ai dati
+\ Un input come 101 >LCD sarebbe considerato un COMANDO per cancellare lo schermo
+\ dove un input come 41 >LCD sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
+\ allo schermo
 : >LCD 
   IS_CMD SWAP >LCDM 
 ;
 \ Embedded Systems - Sistemi Embedded - 17873)
-\ LCD Setup e messages for LCD 1602 )
+\ LCD Setup paraole per la compilazione di messaggi su LCD 1602 )
 \ Università degli Studi di Palermo )
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
 
@@ -317,18 +347,6 @@ HEX
   4D >LCD
   45 >LCD 
   20 >LCD ;
-
-\ Stampa "NOT VALID" a display
-: NOT_VALID 
-  4E >LCD
-  4F >LCD
-  54 >LCD
-  20 >LCD
-  56 >LCD
-  41 >LCD
-  4C >LCD
-  49 >LCD
-  44 >LCD ;
 
 \ Stampa "SMART" a display
 : SMART 
@@ -400,6 +418,23 @@ HEX
     50 >LCD 
     20 >LCD ;
 
+\ Stampa "INSERT" a display
+: INSERT 
+    49 >LCD
+    4E >LCD
+    53 >LCD 
+    45 >LCD
+    52 >LCD
+    54 >LCD
+    20 >LCD ;
+
+\ Stampa "TIME" a display
+: TIME 
+    54 >LCD
+    49 >LCD
+    4D >LCD 
+    45 >LCD
+    20 >LCD ;
 
 \ Cancella il display
 : CLEAR
@@ -539,7 +574,6 @@ VARIABLE WINDTIME
 3 CONSTANT RANGE 
 
 \ Variabile gestisce la terminazione del ciclo.
-\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
 VARIABLE FLAG
 \ Variabile per memorizzare il tempo decine di secondi.
 VARIABLE CAS
@@ -563,21 +597,7 @@ CREATE COUNTER
 : COUNTER++ 
   COUNTER @ 1 + COUNTER ! ;
 
-\ Variabile per memorizzare il tempo di lunghezza (RANGE + 1).
-\ La modifica di RANGE CONSTANT fornirà array di lunghezza diversa
-  CREATE D_CMDS
-D_CMDS RANGE CELLS ALLOT
-
-2 D_CMDS !
-
-\ Recupera i primi 2 valori memorizzati in D_CMDS e li converte in un numero di secondi in dec
-\ esempio 20 su TOS 
-: 2DEV ( variable )
-  D_CMDS @ 4 LSHIFT 
-  D_CMDS CELL+ @ 
-  OR ;
-
-\ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
+ \ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
 \ Duplica il TOS ed emettilo
 \ Lascia l'indirizzo D_CMDS su TOS
 \ Lascia il valore COUNTER su TOS
@@ -589,20 +609,16 @@ D_CMDS RANGE CELLS ALLOT
   COUNTER @ 2 = IF >LINE2 WIND 1000 DELAY
   THEN THEN
   DUP 500 DELAY >LCD 
-  DUP 30 -  \ . CONSUMA LO STACK  SOSTITUIRE CON    30 - DUP
+  DUP 30 -  \ . CONSUMA LO STACK
   DUP .
- \ DUP CAS !
- \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT LIGHTIME !
- \ DUP 2 * 8 LSHIFT 8 LSHIFT 4 LSHIFT WINDTIME !
+\ Termina Programma con la pressione del tasto ESC
+  DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF CR AUTHOR CR ABORT ELSE 
 
   DUP COUNTER @ 0 = IF DUP CAS ! DUP 2 * 4 LSHIFT LIGHTIME ! ELSE
   DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + 8 LSHIFT 8 LSHIFT LIGHTIME ! ELSE
   DUP COUNTER @ 2 = IF DUP COS ! DUP 2 * 4 LSHIFT WINDTIME !  ELSE
   DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + 8 LSHIFT 8 LSHIFT WINDTIME !
-  THEN THEN THEN THEN
-\  D_CMDS COUNTER @ CELLS + ! 
-\  COUNTER @ D_CMDS ?
-\  LIGHTIME @ . ." <- "
+  THEN THEN THEN THEN THEN
   ;
 
 \ Stampa uno dei caratteri trovati nella Colonna 1 controllando il numero di riga specificato con un ciclo condizionale
@@ -719,19 +735,9 @@ D_CMDS RANGE CELLS ALLOT
     19 CHECK_ROW
   ?CTR UNTIL 
   0  CR LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR ." RUN . . . " CR
-  ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR   \INSERIRE CAS
-  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  \INSERIRE CAS
+  ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR  
+  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  
 
-\ Reimposta la VARIABILE D_CMDS scrivendo 0
-\ Resets the D_CMDS VARIABLE by writing 0's
-CREATE AUX_I
-: RES_CMD 
-  0 AUX_I !
-  BEGIN 
-  D_CMDS AUX_I @ 4 * + ! 
-  AUX_I @ 1 + AUX_I !
-  AUX_I @ RANGE 1 + = UNTIL ;
-  
 HEX
 \ Aziona il Sistema Illuminazione
 : GO_LIGHT 
@@ -774,7 +780,7 @@ HEX
       FLAG @ .
       CR
     REPEAT 
-  UNTIL STOP_DISP ;
+  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
 \ Main WORD che contiene settaggi di base e avvio del ciclo principale
@@ -783,6 +789,7 @@ HEX
   SETUP_LCD
   SETUP_KEYPAD
   SETUP_LED
+  CLEAR
   WELCOME
   >LINE2
   SMART
@@ -791,14 +798,17 @@ HEX
   CLEAR
   STOP_DISP 
   10000 DELAY
+  CLEAR
+  INSERT TIME
+  30000 DELAY
     BEGIN
-    RES_CMD
+    FLAGON
     DETECT 
     1 
-    RUN
-    FLAGOFF
-    ?CTF UNTIL FLAGON STOP_DISP 
+    RUN 20000 DELAY
+    ?CTF UNTIL 
     ;
+
 
 \ Solo setup Hardware per testing
   : ONLY_SETUP
@@ -806,7 +816,8 @@ HEX
   SETUP_LCD
   SETUP_KEYPAD
   SETUP_LED
-    WELCOME
+  CLEAR
+  WELCOME
   >LINE2
   SMART
   CLIMA
