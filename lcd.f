@@ -109,6 +109,9 @@
 
 \ Set di words che accede al blocco funzioni del LCD
 \ Il nono bit impostato a 1 abilita ENABLE vedi datasheet 1602
+\ 0x80 → Indirizzo di memoria della DDRAM del display LCD per la linea 1
+\ 0xC0 → Indirizzo di memoria della DDRAM del display LCD per la linea 2
+
 \ Cancella il display
 : CLEAR
   101 >LCD ;

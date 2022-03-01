@@ -100,12 +100,13 @@
   OVER OVER F0 AND 4BM>LCD
   F AND 4 LSHIFT 4BM>LCD ;
 
+\ Per verificare che si tratti di un comando controllo se il 9 bit è 1 (lo shift elimina gli otto precedenti) 
 : IS_CMD 
   DUP 8 RSHIFT 1 = ;
 
 \ Decide se stiamo inviando un comando o un dato a I2C
 \ Commands ha un 1 in più nel bit più significativo rispetto ai dati
-\ Un input come 101 >LCD sarebbe considerato un COMANDO per cancellare lo schermo
+\ Un input come 101 >LCD sarebbe considerato un COMANDO per cancellare lo schermo  0000 0001
 \ dove un input come 41 >LCD sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
 \ allo schermo
 : >LCD 
