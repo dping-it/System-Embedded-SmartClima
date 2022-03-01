@@ -5,16 +5,19 @@
 
 \ includere dopo i2c.f
 
+\ Set di words che genera le parole da visualizzare su LCD
+\ I due esadecimali rappresentano gli otto bit del blocco data per visualizzare la lettera 
+\ così come devinira nella CGRAM
 \ Stampa "welcome" a display
 : WELCOME
-  57 >LCD 
-  45 >LCD
-  4C >LCD
-  43 >LCD  
-  4F >LCD
-  4D >LCD
-  45 >LCD 
-  20 >LCD ;
+    57 >LCD 
+    45 >LCD
+    4C >LCD
+    43 >LCD  
+    4F >LCD
+    4D >LCD
+    45 >LCD 
+    20 >LCD ;
 
 \ Stampa "SMART" a display
 : SMART 
@@ -104,6 +107,8 @@
     45 >LCD
     20 >LCD ;
 
+\ Set di words che accede al blocco funzioni del LCD
+\ Il nono bit impostato a 1 abilita ENABLE vedi datasheet 1602
 \ Cancella il display
 : CLEAR
   101 >LCD ;
