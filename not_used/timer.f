@@ -26,11 +26,11 @@
 
   ( TIMER )
   HEX
-  7E003000 constant CS 
-  7E003004 constant CLO
-  7E003008 constant CHI
-  7E00300C constant C0
-  : delay_ CLO @ + C0 ! BEGIN CS @ 1 = UNTIL ;
+  FE003000 constant CS 
+  FE003004 constant CLO
+  FE003008 constant CHI
+  FE00300C constant C0
+  : DELAY CLO @ + C0 ! BEGIN CS @ 1 = UNTIL ;
 
 \ Time Conversions
 DECIMAL
@@ -52,6 +52,9 @@ CLO @ - \ Time_passed = Timeout - now
 0<= \ Loop until we are over the timeout
 UNTIL
 DROP ;
+
+: 30DELAY ( -- ) 30 SECS DELAY ;
+
 : 250mDELAY ( -- ) 250 mSECS DELAY ;
 
 : 10usDELAY ( -- )  10 uSECS DELAY ;

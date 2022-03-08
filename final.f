@@ -260,14 +260,14 @@ HEX
 
 
 : WELCOME
-  57 >LCD 
-  45 >LCD
-  4C >LCD
-  43 >LCD  
-  4F >LCD
-  4D >LCD
-  45 >LCD 
-  20 >LCD ;
+    57 >LCD 
+    45 >LCD
+    4C >LCD
+    43 >LCD  
+    4F >LCD
+    4D >LCD
+    45 >LCD 
+    20 >LCD ;
 
 : SMART 
     53 >LCD 
@@ -346,6 +346,7 @@ HEX
     4D >LCD 
     45 >LCD
     20 >LCD ;
+
 
 : CLEAR
   101 >LCD ;
@@ -531,12 +532,132 @@ CREATE COUNTER
   0  CR LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR ." RUN . . . " CR
   ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR  
   ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  
+HEX
+
+
+: 4DROP DROP DROP DROP DROP ;
+
+00FFFFFF CONSTANT WHITE
+00000000 CONSTANT BLACK
+00FF0000 CONSTANT RED
+00FFFF00 CONSTANT YELLOW
+0000FF00 CONSTANT GREEN
+000000FF CONSTANT BLUE
+
+3E8FA000 CONSTANT FRAMEBUFFER
+
+VARIABLE DIM
+
+VARIABLE COUNTERH
+
+
+: RESETCOUNTERH 0 COUNTERH ! ;
+
+: +COUNTERH COUNTERH @ 1 + COUNTERH ! ;
+
+VARIABLE NLINE
+: RESETNLINE 1 NLINE ! ;
+: +NLINE NLINE @ 1 + NLINE ! ;
+
+( -- addr )
+: CENTER FRAMEBUFFER 200 4 * + 180 1000 * + ;
+
+( color addr -- color addr_col+1 )
+: RIGHT 2DUP ! 4 + ;
+
+
+( color addr -- color addr_row+1 )
+: DOWN 2DUP ! 1000 + ;
+
+
+( color addr -- color addr_col-1 )
+: LEFT 2DUP ! 4 - ;
+
+
+( addr_endline_right -- addr )
+: RIGHTRESET COUNTERH @ 4 * - ;
+
+
+( addr_endline_left -- addr )
+: LEFTRESET COUNTERH @ 4 * + ;
+
+
+: RIGHTDRAW
+    BEGIN COUNTERH @ DIM @ < WHILE +COUNTERH RIGHT REPEAT RIGHTRESET RESETCOUNTERH ;
+
+: LEFTDRAW
+    BEGIN COUNTERH @ DIM @ < WHILE +COUNTERH LEFT REPEAT LEFTRESET RESETCOUNTERH ;
+
+
+: DRAWSQUARE
+    80 DIM !
+    CENTER 140 - RIGHTDRAW
+    BEGIN NLINE @ 70 <
+        WHILE
+            DOWN RIGHTDRAW
+            +NLINE
+        REPEAT
+    2DROP RESETNLINE
+;
+
+: DRAWSTARTWIND
+    GREEN CENTER 80 -
+    BEGIN NLINE @ 70 <=
+        WHILE
+            NLINE @ 37 <= IF
+            NLINE @ DIM !
+                ELSE
+                    70 NLINE @ - DIM !
+            THEN
+            DOWN RIGHTDRAW
+            +NLINE
+        REPEAT
+    2DROP RESETNLINE
+;
+
+: DRAWSTARTLIGHT
+    YELLOW CENTER 80 -
+    BEGIN NLINE @ 70 <=
+        WHILE
+            NLINE @ 37 <= IF
+            NLINE @ DIM !
+                ELSE
+                    70 NLINE @ - DIM !
+            THEN
+            DOWN RIGHTDRAW
+            +NLINE
+        REPEAT
+    2DROP RESETNLINE
+;
+
+: DRAWSTOP RED DRAWSQUARE ;
+
+: CLEAN BLACK DRAWSQUARE ;
+
+: DRAWITAFLAG
+
+    WHITE DRAWSQUARE
+    30 DIM !
+    RED CENTER RIGHTDRAW
+    GREEN CENTER 80 - LEFTDRAW
+    BEGIN NLINE @ 70 <
+        WHILE
+            DOWN LEFTDRAW
+            2SWAP
+            DOWN RIGHTDRAW
+            2SWAP
+            +NLINE
+        REPEAT
+    4DROP RESETNLINE
+;
 
 HEX
 : GO_LIGHT 
   REDLED GPOFF!
   STOPWIND
   CLEAR
+  CLEAN
+  DRAWSTARTLIGHT
   SYSTEM
   LIGHT
   SYSTEMLIGHT
@@ -546,6 +667,8 @@ HEX
   REDLED GPOFF!
   STOPLIGHT
   CLEAR
+  CLEAN
+  DRAWSTARTWIND
   SYSTEM
   WIND
   SYSTEMWIND
@@ -554,6 +677,8 @@ HEX
 : STOP_DISP 
   ALL_LED_ON
   CLEAR
+  CLEAN
+  DRAWSTOP
   SYSTEM
   STOP
   ;

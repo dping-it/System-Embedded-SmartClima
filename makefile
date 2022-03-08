@@ -1,4 +1,4 @@
-EMBEDDED: ans.f gpio.f i2c.f lcd.f led.f pad.f main.f
+EMBEDDED: ans.f gpio.f i2c.f lcd.f led.f pad.f hdmi.f main.f
 	rm -f embedded.f
 	rm -f final.f
 	cat ans.f >> embedded.f
@@ -7,5 +7,6 @@ EMBEDDED: ans.f gpio.f i2c.f lcd.f led.f pad.f main.f
 	cat lcd.f >> embedded.f
 	cat led.f >> embedded.f
 	cat pad.f >> embedded.f
+	cat hdmi.f >> embedded.f
 	cat main.f >> embedded.f
 	grep -v '^ *\\' embedded.f > final.f
