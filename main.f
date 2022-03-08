@@ -56,6 +56,8 @@ HEX
 \ A questo punto parte il messaggio di benvenuto e inizia il ciclo infinito:
 \ Sarà necessario introdurre il tempo di esecuzione degli adattatori espresso in secondi ( 2 cifre per illuminazione e 2 cifre per il vento);
 : SETUP
+  CLEAN
+  DRAWITAFLAG
   SETUP_I2C
   SETUP_LCD
   SETUP_KEYPAD
