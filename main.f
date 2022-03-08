@@ -85,6 +85,8 @@ HEX
 
 \ Solo setup Hardware per testing
   : ONLY_SETUP
+  CLEAN
+  DRAWITAFLAG
   SETUP_I2C
   SETUP_LCD
   SETUP_KEYPAD
