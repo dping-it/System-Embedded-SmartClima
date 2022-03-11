@@ -14,15 +14,20 @@ VARIABLE COUNTER
 \ Inizializzazione delle variabili utilizzate
 0 COMP0 !
 
-
+\ Restituisce il valore attuale del registro CLO
+( -- clo_value )
+: NOW CLO @ ;
+\ Setta un ritardo corrispondente al valore presente sullo stack
+( delay_sec -- )
+: DELAY_SEC NOW + BEGIN DUP NOW - 0 <= UNTIL DROP ;
 
 \ La Mod Swap Word restituisce il MOD 60 di un numero passato, il cui valore e inizialmente espresso in secondi. 
 \ La MSW quindi pone sullo stack il resto e il quoto della divisione per 60  ed effettua successivamente uno swap.
- (n1 -- n3 n2)
+ ( n1 -- n3 n2 )
 : MSW 60 /MOD SWAP ;
 
 \ Memorizza il valore attuale del CLO + 1 secondo in COMP0
-: INC NOW SEC + COMP0 ! ;
+: INC NOW DUP . SEC + COMP0 ! ;
 
 : DECCOUNT COUNTER @ 1 - COUNTER ! ;
 

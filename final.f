@@ -662,12 +662,15 @@ VARIABLE COUNTER
 
 0 COMP0 !
 
+( -- clo_value )
+: NOW CLO @ ;
+( delay_sec -- )
+: DELAY_SEC NOW + BEGIN DUP NOW - 0 <= UNTIL DROP ;
 
-
- (n1 -- n3 n2)
+ ( n1 -- n3 n2 )
 : MSW 60 /MOD SWAP ;
 
-: INC NOW SEC + COMP0 ! ;
+: INC NOW DUP . SEC + COMP0 ! ;
 
 : DECCOUNT COUNTER @ 1 - COUNTER ! ;
 
