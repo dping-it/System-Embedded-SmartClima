@@ -7,15 +7,29 @@
 
 \ GPIO Mapping
 HEX
-FE000000 CONSTANT BASE  \ Indirizzo base dei registri
-BASE 200000 + CONSTANT GPFSEL0  \ Spazio dei registri GPIO FE200000 
+
+\ Indirizzo base dei registri GPIO in VMU FE200000 
+FE000000 CONSTANT BASE  
+
+BASE 200000 + CONSTANT GPFSEL0 
 BASE 200004 + CONSTANT GPFSEL1
 BASE 200008 + CONSTANT GPFSEL2
+
+\ Registro dello stato di rilevamento degli eventi, utilizzato per registrare gli eventi di livello e
+\ di onda sui pin GPIO.
 BASE 200040 + CONSTANT GPEDS0
+
 BASE 20001C + CONSTANT GPSET0
 BASE 200028 + CONSTANT GPCLR0
+
 BASE 200034 + CONSTANT GPLEV0
+
 BASE 200058 + CONSTANT GPFEN0
+
+\ Registro di abilitazione del rilevamento del fronte di salita asincrono sui pin GPIO dove è abilitato 
+\ il controllo di stato di rilevamento eventi.
+BASE 20007C + CONSTANT GPAREN0
+
 
 \ Applica lo spostamento logico sinistro di 1 bit sul valore dato
 \ e restituisce il valore spostato

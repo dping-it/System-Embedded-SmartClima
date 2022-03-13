@@ -186,15 +186,29 @@
 
 \ GPIO Mapping
 HEX
-FE000000 CONSTANT BASE  \ Indirizzo base dei registri
-BASE 200000 + CONSTANT GPFSEL0  \ Spazio dei registri GPIO FE200000 
+
+\ Indirizzo base dei registri GPIO in VMU FE200000 
+FE000000 CONSTANT BASE  
+
+BASE 200000 + CONSTANT GPFSEL0 
 BASE 200004 + CONSTANT GPFSEL1
 BASE 200008 + CONSTANT GPFSEL2
+
+\ Registro dello stato di rilevamento degli eventi, utilizzato per registrare gli eventi di livello e
+\ di onda sui pin GPIO.
 BASE 200040 + CONSTANT GPEDS0
+
 BASE 20001C + CONSTANT GPSET0
 BASE 200028 + CONSTANT GPCLR0
+
 BASE 200034 + CONSTANT GPLEV0
+
 BASE 200058 + CONSTANT GPFEN0
+
+\ Registro di abilitazione del rilevamento del fronte di salita asincrono sui pin GPIO dove è abilitato 
+\ il controllo di stato di rilevamento eventi.
+BASE 20007C + CONSTANT GPAREN0
+
 
 \ Applica lo spostamento logico sinistro di 1 bit sul valore dato
 \ e restituisce il valore spostato
@@ -1022,17 +1036,18 @@ HEX
 
 \ Word per il controllo del bottone d'avvio
 
+HEX
 
-\ Dichiarazione dell'indirizzo del registro GPAREN0 come costante
-FE20007C CONSTANT GPAREN0
-
+\ Impostiamo il GPIO26 come output ( 001 ) sul bit 20:18 con 40000 in HEX a cui è associati il pulsante di accenzione.
 : SETUP_BUTTON 
   40000 GPFSEL2 @ OR GPFSEL2 ! 
+;
 
-\ Rendiamo sensibile ai fronti di salita le GPIO26 a cui è associati il pulsante, quindi
+\ Rendiamo sensibile ai fronti di salita il GPIO26 a cui è associati il pulsante, quindi
 \ avremo 1000 0000 0000 0000 0000 0000 0000 che equivale a 4000000 in decimale o 0x63 in esadecimale
-\ : GPAREN! 4000000 GPAREN0 ! ;
+
 : GPAREN! 4000000 GPAREN0 @ OR GPAREN0 ! ;
+
 
 HEX
 \ Aziona il Sistema Illuminazione
@@ -1136,15 +1151,14 @@ HEX
   STOP_DISP
   ;
 
+: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " SETUP THEN 0 GPEDS0 ! ;
+
 : START
     SETUP_BUTTON
     GPAREN!
     BEGIN
-    \ Controlla se e stato premuto il pulsante START collegato alla GPIO5
-        GPEDS0 @ 4000000 = WHILE
-        : PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO " ! THEN 2 GPEDS0 ! ;
-        SETUP
+      PARTIAL
     REPEAT
     \ Resettiamo il valore di GPEDS0
-    4000000 GPEDS0 !
+ \   4000000 GPEDS0 !
 ;

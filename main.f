@@ -101,15 +101,15 @@ HEX
   STOP_DISP
   ;
 
+: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " SETUP THEN 0 GPEDS0 ! ;
+
 : START
     SETUP_BUTTON
     GPAREN!
     BEGIN
-    \ Controlla se e stato premuto il pulsante START collegato alla GPIO5
-        GPEDS0 @ 4000000 = WHILE
-        : PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO " ! THEN 2 GPEDS0 ! ;
-        SETUP
+    WHILE
+      PARTIAL
     REPEAT
     \ Resettiamo il valore di GPEDS0
-    4000000 GPEDS0 !
+ \   4000000 GPEDS0 !
 ;

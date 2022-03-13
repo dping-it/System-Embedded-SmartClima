@@ -7,14 +7,15 @@
 
 \ Word per il controllo del bottone d'avvio
 
+HEX
 
-\ Dichiarazione dell'indirizzo del registro GPAREN0 come costante
-FE20007C CONSTANT GPAREN0
-
+\ Impostiamo il GPIO26 come output ( 001 ) sul bit 20:18 con 40000 in HEX a cui è associati il pulsante di accenzione.
 : SETUP_BUTTON 
   40000 GPFSEL2 @ OR GPFSEL2 ! 
+;
 
-\ Rendiamo sensibile ai fronti di salita le GPIO26 a cui è associati il pulsante, quindi
+\ Rendiamo sensibile ai fronti di salita il GPIO26 a cui è associati il pulsante, quindi
 \ avremo 1000 0000 0000 0000 0000 0000 0000 che equivale a 4000000 in decimale o 0x63 in esadecimale
-\ : GPAREN! 4000000 GPAREN0 ! ;
+
 : GPAREN! 4000000 GPAREN0 @ OR GPAREN0 ! ;
+
