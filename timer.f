@@ -8,8 +8,8 @@ F4240 CONSTANT SEC
 \ Variabile che memorizza il valore attuale del CLO + 1 secondo
 VARIABLE COMP0
 
-VARIABLE COUNTER
-0 COUNTER !
+VARIABLE TIME_COUNTER
+0 TIME_COUNTER !
 
 \ Inizializzazione delle variabili utilizzate
 0 COMP0 !
@@ -29,15 +29,16 @@ VARIABLE COUNTER
 \ Memorizza il valore attuale del CLO + 1 secondo in COMP0
 : INC NOW DUP . SEC + COMP0 ! ;
 
-: DECCOUNT COUNTER @ 1 - COUNTER ! ;
+: DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 
 \ Segnala ogni qual volta e passato un secondo confrontando CLO con COMP0
-: SLEEPS HEX INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." Passato 1 sec " DROP DECIMAL ;
+: SLEEPS HEX INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP DECIMAL ;
 
-: INCCOUNT COUNTER @ 1 + COUNTER ! ;
+: INCCOUNT TIME_COUNTER @ 1 + TIME_COUNTER ! ;
 
+\ Word che imposta un conto alla rovescia in secondi a partire dal n passato fino a zero. 
 DECIMAL 
-: CICLOCONT COUNTER ! begin CR COUNTER @ U. SLEEPS DECCOUNT COUNTER @ 0 = until CR
+: TIMER TIME_COUNTER ! begin CR TIME_COUNTER @ U. SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
 CR ." fine " DROP ;
 
 HEX
