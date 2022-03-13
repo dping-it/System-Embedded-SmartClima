@@ -147,11 +147,6 @@
 		DUP CFA> ?DUP IF 2DUP ID. [ CHAR + ] LITERAL EMIT SWAP >DFA 4+ - . THEN
 	ENDCASE 4+ REPEAT DROP CR
 ;
-: BINARY ( -- ) 2 BASE ! ;
-: OCTAL ( -- ) 8 BASE ! ;
-: 2# BASE @ 2 BASE ! WORD NUMBER DROP SWAP BASE ! ;
-: 8# BASE @ 8 BASE ! WORD NUMBER DROP SWAP BASE ! ;
-: # ( b -- n ) BASE @ SWAP BASE ! WORD NUMBER DROP SWAP BASE ! ;
 
 : UNUSED ( -- n ) PAD HERE @ - 4/ ;
 
@@ -577,9 +572,9 @@ C CONSTANT GREENLED
 VARIABLE LIGHTIME 
 VARIABLE WINDTIME
 
-\Settaggi di default luce e vento in ms 800000 37SEC  400000 19SEC  200000 9SEC 
-420000 LIGHTIME !
-420000 WINDTIME !
+1 LIGHTIME !
+1 WINDTIME !
+
 \ Embedded Systems - Sistemi Embedded - 17873
 \ Keypad 
 \ Università degli Studi di Palermo
@@ -697,10 +692,10 @@ CREATE COUNTER
 \ Termina Programma con la pressione del tasto ESC
   DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF CR AUTHOR CR ABORT ELSE 
 
-  DUP COUNTER @ 0 = IF DUP CAS ! DUP 2 LSHIFT LIGHTIME ! ELSE
-  DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ +  LIGHTIME ! ELSE
-  DUP COUNTER @ 2 = IF DUP COS ! DUP 2 LSHIFT WINDTIME !  ELSE
-  DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + WINDTIME !
+  DUP COUNTER @ 0 = IF DUP CAS ! DUP 4 LSHIFT LIGHTIME ! ELSE
+  DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + DUP LIGHTIME ! ." >> " . ELSE
+  DUP COUNTER @ 2 = IF DUP COS ! DUP 4 LSHIFT WINDTIME !  ELSE
+  DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + DUP WINDTIME ! ." >> " .
   THEN THEN THEN THEN THEN
   ;
 
@@ -994,6 +989,7 @@ F4240 CONSTANT SEC
 VARIABLE COMP0
 
 VARIABLE TIME_COUNTER
+DECIMAL
 0 TIME_COUNTER !
 
 \ Inizializzazione delle variabili utilizzate
@@ -1017,16 +1013,16 @@ VARIABLE TIME_COUNTER
 : DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 
 \ Segnala ogni qual volta e passato un secondo confrontando CLO con COMP0
-: SLEEPS HEX INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP DECIMAL ;
+: SLEEPS DECIMAL INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP HEX ;
 
 : INCCOUNT TIME_COUNTER @ 1 + TIME_COUNTER ! ;
 
-\ Word che imposta un conto alla rovescia in secondi a partire dal n passato fino a zero. 
-DECIMAL 
+\ Word che imposta un conto alla rovescia in secondi a partire dal n passato fino a zero.  
+
 : TIMER TIME_COUNTER ! begin CR TIME_COUNTER @ U. SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
 CR ." fine " DROP ;
 
-HEX
+
 \ Embedded Systems - Sistemi Embedded - 17873)
 \ LCD Setup paraole per la compilazione di messaggi su LCD 1602 )
 \ Università degli Studi di Palermo )
@@ -1088,8 +1084,10 @@ HEX
 \ Al termine il programma si rimette in configurazione d'immissione dati.
 : RUN 0 COUNTER ! 
   BEGIN                   
-    FLAG @ 1 = WHILE GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ DELAY 
-      GO_WIND ." SYSTEM WIND " WINDTIME @ DELAY 
+    FLAG @ 1 = WHILE 
+      ." -> " LIGHTIME @ . ." -> " WINDTIME @ .
+      GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ TIMER 
+      GO_WIND ." SYSTEM WIND " WINDTIME @ TIMER 
       COUNTER++ 
       COUNTER @ 4 = IF  FLAGOFF THEN
       ." Cycle n° " 
@@ -1098,7 +1096,7 @@ HEX
       FLAG @ .
       CR
     REPEAT 
-  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
+  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
 \ Main WORD che contiene settaggi di base e avvio del ciclo principale:
@@ -1151,14 +1149,16 @@ HEX
   STOP_DISP
   ;
 
-: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " SETUP THEN 0 GPEDS0 ! ;
+: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " CR SETUP THEN 0 GPEDS0 ! ;
 
 : START
     SETUP_BUTTON
     GPAREN!
     BEGIN
-      PARTIAL
-    REPEAT
-    \ Resettiamo il valore di GPEDS0
- \   4000000 GPEDS0 !
+      WHILE
+        PARTIAL
+      REPEAT
+    0 GPEDS0 !
 ;
+
+START

@@ -38,8 +38,10 @@ HEX
 \ Al termine il programma si rimette in configurazione d'immissione dati.
 : RUN 0 COUNTER ! 
   BEGIN                   
-    FLAG @ 1 = WHILE GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ DELAY 
-      GO_WIND ." SYSTEM WIND " WINDTIME @ DELAY 
+    FLAG @ 1 = WHILE 
+      ." -> " LIGHTIME @ . ." -> " WINDTIME @ .
+      GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ TIMER 
+      GO_WIND ." SYSTEM WIND " WINDTIME @ TIMER 
       COUNTER++ 
       COUNTER @ 4 = IF  FLAGOFF THEN
       ." Cycle n° " 
@@ -48,7 +50,7 @@ HEX
       FLAG @ .
       CR
     REPEAT 
-  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
+  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
 \ Main WORD che contiene settaggi di base e avvio del ciclo principale:
@@ -101,15 +103,16 @@ HEX
   STOP_DISP
   ;
 
-: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " SETUP THEN 0 GPEDS0 ! ;
+: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " CR SETUP THEN 0 GPEDS0 ! ;
 
 : START
     SETUP_BUTTON
     GPAREN!
     BEGIN
-    WHILE
-      PARTIAL
-    REPEAT
-    \ Resettiamo il valore di GPEDS0
- \   4000000 GPEDS0 !
+      WHILE
+        PARTIAL
+      REPEAT
+    0 GPEDS0 !
 ;
+
+START
