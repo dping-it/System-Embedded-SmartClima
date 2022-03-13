@@ -100,3 +100,16 @@ HEX
   CLEAR
   STOP_DISP
   ;
+
+: START
+    SETUP_BUTTON
+    GPAREN!
+    BEGIN
+    \ Controlla se e stato premuto il pulsante START collegato alla GPIO5
+        GPEDS0 @ 4000000 = WHILE
+        : PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO " ! THEN 2 GPEDS0 ! ;
+        SETUP
+    REPEAT
+    \ Resettiamo il valore di GPEDS0
+    4000000 GPEDS0 !
+;
