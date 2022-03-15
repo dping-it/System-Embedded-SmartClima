@@ -574,7 +574,6 @@ VARIABLE WINDTIME
 
 1 LIGHTIME !
 1 WINDTIME !
-
 \ Embedded Systems - Sistemi Embedded - 17873
 \ Keypad 
 \ Università degli Studi di Palermo
@@ -989,7 +988,7 @@ F4240 CONSTANT SEC
 VARIABLE COMP0
 
 VARIABLE TIME_COUNTER
-DECIMAL
+
 0 TIME_COUNTER !
 
 \ Inizializzazione delle variabili utilizzate
@@ -1013,16 +1012,19 @@ DECIMAL
 : DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 
 \ Segnala ogni qual volta e passato un secondo confrontando CLO con COMP0
-: SLEEPS DECIMAL INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP HEX ;
+
+: SLEEPS HEX INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP DECIMAL ;
+
 
 : INCCOUNT TIME_COUNTER @ 1 + TIME_COUNTER ! ;
 
 \ Word che imposta un conto alla rovescia in secondi a partire dal n passato fino a zero.  
 
-: TIMER TIME_COUNTER ! begin CR TIME_COUNTER @ U. SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
-CR ." fine " DROP ;
+DECIMAL : TIMER TIME_COUNTER ! begin CR TIME_COUNTER @ DUP U. SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
+CR ." fine " CR DROP ;
 
 
+HEX
 \ Embedded Systems - Sistemi Embedded - 17873)
 \ LCD Setup paraole per la compilazione di messaggi su LCD 1602 )
 \ Università degli Studi di Palermo )
@@ -1085,6 +1087,7 @@ HEX
 : RUN 0 COUNTER ! 
   BEGIN                   
     FLAG @ 1 = WHILE 
+    
       ." -> " LIGHTIME @ . ." -> " WINDTIME @ .
       GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ TIMER 
       GO_WIND ." SYSTEM WIND " WINDTIME @ TIMER 
@@ -1095,7 +1098,7 @@ HEX
       ." Flag setting " 
       FLAG @ .
       CR
-    REPEAT 
+    REPEAT
   ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 

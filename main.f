@@ -39,6 +39,7 @@ HEX
 : RUN 0 COUNTER ! 
   BEGIN                   
     FLAG @ 1 = WHILE 
+    
       ." -> " LIGHTIME @ . ." -> " WINDTIME @ .
       GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ TIMER 
       GO_WIND ." SYSTEM WIND " WINDTIME @ TIMER 
@@ -49,7 +50,7 @@ HEX
       ." Flag setting " 
       FLAG @ .
       CR
-    REPEAT 
+    REPEAT
   ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
