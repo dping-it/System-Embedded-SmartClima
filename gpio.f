@@ -30,7 +30,6 @@ BASE 200058 + CONSTANT GPFEN0
 \ il controllo di stato di rilevamento eventi.
 BASE 20007C + CONSTANT GPAREN0
 
-
 \ Applica lo spostamento logico sinistro di 1 bit sul valore dato
 \ e restituisce il valore spostato
 \ Utilizzo: 2 MASK

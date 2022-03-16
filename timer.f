@@ -1,5 +1,7 @@
-HEX
-FE003004 CONSTANT CLO
+HEX 
+
+\ Clock Register
+BASE 003004 + CONSTANT CLO
 
 \ Dichiarazione della costante che indica un secondo e che ha valore 1 000 000 usec in decimale o
 \ F4240 in hex
@@ -22,27 +24,25 @@ VARIABLE TIME_COUNTER
 ( delay_sec -- )
 : DELAY_SEC NOW + BEGIN DUP NOW - 0 <= UNTIL DROP ;
 
-\ La Mod Swap Word restituisce il MOD 60 di un numero passato, il cui valore e inizialmente espresso in secondi. 
-\ La MSW quindi pone sullo stack il resto e il quoto della divisione per 60  ed effettua successivamente uno swap.
- ( n1 -- n3 n2 )
-: MSW 60 /MOD SWAP ;
+\ Converte il valore decimal in secondi a hexadecimal per darlo in pasto al tic. La word pone sullo stack il resto 
+\ e il quoto della divisione per 10 moltiflica il quoto per A (10 in HEX) somma il resto ed effettua successivamente uno swap.
+: PARSE_DEC_HEX ( n1 -- n3 n2 ) 10 /MOD A * SWAP + DUP . ." >> SECONDS " ;
 
 \ Memorizza il valore attuale del CLO + 1 secondo in COMP0
-: INC NOW DUP . SEC + COMP0 ! ;
+: INC NOW SEC + COMP0 ! ;
 
-: DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 
 \ Segnala ogni qual volta e passato un secondo confrontando CLO con COMP0
 
-: SLEEPS  INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP DECIMAL ;
+: SLEEPS DECIMAL INC BEGIN NOW COMP0 @ < WHILE REPEAT DUP U. ." | " DROP DECIMAL ;
 
-
+\ Words di incremento e decremento contatore
+: DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 : INCCOUNT TIME_COUNTER @ 1 + TIME_COUNTER ! ;
 
 \ Word che imposta un conto alla rovescia in secondi a partire dal n passato fino a zero.  
 
-DECIMAL : TIMER TIME_COUNTER ! begin CR TIME_COUNTER @ DUP U. SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
-CR ." fine " CR DROP ;
-
+DECIMAL : TIMER PARSE_DEC_HEX TIME_COUNTER ! CR begin TIME_COUNTER @ SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
+ ." END EROGATION " CR CR DROP ;
 
 HEX

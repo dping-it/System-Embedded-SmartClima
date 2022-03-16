@@ -39,19 +39,17 @@ HEX
 : RUN 0 COUNTER ! 
   BEGIN                   
     FLAG @ 1 = WHILE 
-    
-      ." -> " LIGHTIME @ . ." -> " WINDTIME @ .
       GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ TIMER 
       GO_WIND ." SYSTEM WIND " WINDTIME @ TIMER 
       COUNTER++ 
       COUNTER @ 4 = IF  FLAGOFF THEN
-      ." Cycle n° " 
+      ." Cycle n. " 
       COUNTER @ .
       ." Flag setting " 
       FLAG @ .
-      CR
+      CR CR
     REPEAT
-  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
+  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." END AUTOMATIC CYCLE " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
 \ Main WORD che contiene settaggi di base e avvio del ciclo principale:
@@ -104,7 +102,7 @@ HEX
   STOP_DISP
   ;
 
-: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " CR SETUP THEN 0 GPEDS0 ! ;
+: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO DEL SISTEMA " CR SETUP THEN 0 GPEDS0 ! ;
 
 : START
     SETUP_BUTTON

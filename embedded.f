@@ -204,7 +204,6 @@ BASE 200058 + CONSTANT GPFEN0
 \ il controllo di stato di rilevamento eventi.
 BASE 20007C + CONSTANT GPAREN0
 
-
 \ Applica lo spostamento logico sinistro di 1 bit sul valore dato
 \ e restituisce il valore spostato
 \ Utilizzo: 2 MASK
@@ -689,12 +688,12 @@ CREATE COUNTER
   DUP 30 -  \ . CONSUMA LO STACK
   DUP .
 \ Termina Programma con la pressione del tasto ESC
-  DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF CR AUTHOR CR ABORT ELSE 
+  DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF CR AUTHOR CR EXIT ELSE 
 
   DUP COUNTER @ 0 = IF DUP CAS ! DUP 4 LSHIFT LIGHTIME ! ELSE
-  DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + DUP LIGHTIME ! ." >> " . ELSE
+  DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + LIGHTIME ! ELSE
   DUP COUNTER @ 2 = IF DUP COS ! DUP 4 LSHIFT WINDTIME !  ELSE
-  DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + DUP WINDTIME ! ." >> " .
+  DUP COUNTER @ 3 = IF DUP COSS ! DUP WINDTIME @ + WINDTIME ! 
   THEN THEN THEN THEN THEN
   ;
 
@@ -811,9 +810,10 @@ CREATE COUNTER
     18 CHECK_ROW
     19 CHECK_ROW
   ?CTR UNTIL 
-  0  CR LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR ." RUN . . . " CR
+  0  CR \ LIGHTIME @ . ." <- LIGHTIME " CR WINDTIME @ . ." <- WINDTIME " CR 
+  ." RUN SYSTEM . . . " CR
   ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR  
-  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR ;  
+  ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR CR ;  
 HEX
 
 \ IMPOSTAZIONI  DEL FRAMEBUFFER SU INTERPRETE
@@ -977,8 +977,10 @@ VARIABLE NLINE
         REPEAT
     4DROP RESETNLINE
 ;
-HEX
-FE003004 CONSTANT CLO
+HEX 
+
+\ Clock Register
+BASE 003004 + CONSTANT CLO
 
 \ Dichiarazione della costante che indica un secondo e che ha valore 1 000 000 usec in decimale o
 \ F4240 in hex
@@ -1001,28 +1003,26 @@ VARIABLE TIME_COUNTER
 ( delay_sec -- )
 : DELAY_SEC NOW + BEGIN DUP NOW - 0 <= UNTIL DROP ;
 
-\ La Mod Swap Word restituisce il MOD 60 di un numero passato, il cui valore e inizialmente espresso in secondi. 
-\ La MSW quindi pone sullo stack il resto e il quoto della divisione per 60  ed effettua successivamente uno swap.
- ( n1 -- n3 n2 )
-: MSW 60 /MOD SWAP ;
+\ Converte il valore decimal in secondi a hexadecimal per darlo in pasto al tic. La word pone sullo stack il resto 
+\ e il quoto della divisione per 10 moltiflica il quoto per A (10 in HEX) somma il resto ed effettua successivamente uno swap.
+: PARSE_DEC_HEX ( n1 -- n3 n2 ) 10 /MOD A * SWAP + DUP . ." >> SECONDS " ;
 
 \ Memorizza il valore attuale del CLO + 1 secondo in COMP0
-: INC NOW DUP . SEC + COMP0 ! ;
+: INC NOW SEC + COMP0 ! ;
 
-: DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 
 \ Segnala ogni qual volta e passato un secondo confrontando CLO con COMP0
 
-: SLEEPS HEX INC BEGIN NOW COMP0 @ < WHILE REPEAT CR ." TIC " DROP DECIMAL ;
+: SLEEPS DECIMAL INC BEGIN NOW COMP0 @ < WHILE REPEAT DUP U. ." | " DROP DECIMAL ;
 
-
+\ Words di incremento e decremento contatore
+: DECCOUNT TIME_COUNTER @ 1 - TIME_COUNTER ! ;
 : INCCOUNT TIME_COUNTER @ 1 + TIME_COUNTER ! ;
 
 \ Word che imposta un conto alla rovescia in secondi a partire dal n passato fino a zero.  
 
-DECIMAL : TIMER TIME_COUNTER ! begin CR TIME_COUNTER @ DUP U. SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
-CR ." fine " CR DROP ;
-
+DECIMAL : TIMER PARSE_DEC_HEX TIME_COUNTER ! CR begin TIME_COUNTER @ SLEEPS DECCOUNT TIME_COUNTER @ 0 = until CR
+ ." END EROGATION " CR CR DROP ;
 
 HEX
 \ Embedded Systems - Sistemi Embedded - 17873)
@@ -1087,13 +1087,11 @@ HEX
 : RUN 0 COUNTER ! 
   BEGIN                   
     FLAG @ 1 = WHILE 
-    
-      ." -> " LIGHTIME @ . ." -> " WINDTIME @ .
       GO_LIGHT ." SYSTEM LIGHT "  LIGHTIME @ TIMER 
       GO_WIND ." SYSTEM WIND " WINDTIME @ TIMER 
       COUNTER++ 
       COUNTER @ 4 = IF  FLAGOFF THEN
-      ." Cycle n° " 
+      ." Cycle n. " 
       COUNTER @ .
       ." Flag setting " 
       FLAG @ .
@@ -1152,7 +1150,7 @@ HEX
   STOP_DISP
   ;
 
-: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO " CR SETUP THEN 0 GPEDS0 ! ;
+: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO DEL SISTEMA " CR SETUP THEN 0 GPEDS0 ! ;
 
 : START
     SETUP_BUTTON
