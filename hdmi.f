@@ -19,8 +19,8 @@ HEX
 3E8FA000 CONSTANT FRAMEBUFFER
 
 VARIABLE DIM
-\ Contatore utilizzato nei cicli per disegnare le linee orizzontali
 
+\ Contatore utilizzato nei cicli per disegnare le linee orizzontali
 VARIABLE COUNTERH
 
 
@@ -40,14 +40,14 @@ VARIABLE NLINE
 : CENTER FRAMEBUFFER 200 4 * + 180 1000 * + ;
 \ Colora, con il colore presente sullo stack, il pixel corrispondente all'indirizzo
 \ presente sullo stack,
-\ dopodiche punta al pixel a destra
+\ dopodichè punta al pixel a destra
 
 ( color addr -- color addr_col+1 )
 : RIGHT 2DUP ! 4 + ;
 
 \ Colora, con il colore presente sullo stack, il pixel corrispondente all'indirizzo
 \ presente sullo stack,
-\ dopodiche punta al pixel in basso
+\ dopodichè punta al pixel in basso
 
 ( color addr -- color addr_row+1 )
 : DOWN 2DUP ! 1000 + ;
