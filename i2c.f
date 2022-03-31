@@ -104,10 +104,10 @@
 : IS_CMD 
   DUP 8 RSHIFT 1 = ;
 
-\ Decide se stiamo inviando un comando o un dato a I2C
+\ Controlla se stiamo inviando un comando o un dato a I2C
 \ Commands ha un 1 in più nel bit più significativo rispetto ai dati
 \ Un input come 101 >LCD sarebbe considerato un COMANDO per cancellare lo schermo  0000 0001
-\ dove un input come 41 >LCD sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
+\ altrimenti se 0 ( ad esempio un input come 41 >LCD ) sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
 \ allo schermo
 : >LCD 
   IS_CMD SWAP >LCDM 
