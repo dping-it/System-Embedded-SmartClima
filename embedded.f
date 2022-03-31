@@ -688,7 +688,7 @@ CREATE COUNTER
   DUP 30 -  \ . CONSUMA LO STACK
   DUP .
 \ Termina Programma con la pressione del tasto ESC
-  DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF CR AUTHOR CR EXIT ELSE 
+  DUP -15 = IF CLEAR ALL_LED_ON SYSTEM STOP 30000 DELAY ." EXIT TO END PROGRAM " FLAGOFF CR AUTHOR CR CR EXIT ELSE 
 
   DUP COUNTER @ 0 = IF DUP CAS ! DUP 4 LSHIFT LIGHTIME ! ELSE
   DUP COUNTER @ 1 = IF DUP CASS ! DUP LIGHTIME @ + LIGHTIME ! ELSE
@@ -1095,9 +1095,9 @@ HEX
       COUNTER @ .
       ." Flag setting " 
       FLAG @ .
-      CR
+      CR CR
     REPEAT
-  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." FINE PROGRAMMA " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
+  ?CTF UNTIL FLAGON STOP_DISP 10000 DELAY ." END AUTOMATIC CYCLE " CR CLEAR INSERT TIME 10000 DELAY ; \ Riutilizzo di flag per gestire il ciclo principale.
 
 
 \ Main WORD che contiene settaggi di base e avvio del ciclo principale:
