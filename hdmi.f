@@ -1,3 +1,10 @@
+\ Embedded Systems - Sistemi Embedded - 17873)
+\ Gestione dell'uscita HDMI del FrameBuffer)
+\ Università degli Studi di Palermo )
+\ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
+
+\ includere dopo pad.f
+
 HEX
 
 \ IMPOSTAZIONI  DEL FRAMEBUFFER SU INTERPRETE
@@ -15,7 +22,7 @@ HEX
 0000FF00 CONSTANT GREEN
 000000FF CONSTANT BLUE
 
-\ Dichiarazione del base address del framebuffer
+\ Dichiarazione del base address del framebuffer ( definito nel kernel )
 3E8FA000 CONSTANT FRAMEBUFFER
 
 VARIABLE DIM
@@ -54,7 +61,7 @@ VARIABLE NLINE
 
 \ Colora, con il colore presente sullo stack, il pixel corrispondente all'indirizzo
 \ presente sullo stack,
-\ dopodiche punta al pixel a sinistra
+\ dopodichè punta al pixel a sinistra
 
 ( color addr -- color addr_col-1 )
 : LEFT 2DUP ! 4 - ;
@@ -82,9 +89,9 @@ VARIABLE NLINE
 
 
 \ Disegna o il simbolo di stop o pulisce la porzione di schermo su cui disegnamo.
-\ Partendo da CENTER-32px-48px, quindi CENTER-80px, e poiche ogni spostamento di 1px su
+\ Partendo da CENTER-32px-48px, quindi CENTER-80px, e poichè ogni spostamento di 1px su
 \ una riga
-\ vale 4, abbiamo 320 in dec e cioe 140 in hex
+\ vale 4, abbiamo 320 in dec e cioè 140 in hex
 : DRAWSQUARE
     80 DIM !
     CENTER 140 - RIGHTDRAW

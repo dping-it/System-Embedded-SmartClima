@@ -1,3 +1,10 @@
+\ Embedded Systems - Sistemi Embedded - 17873)
+\ Timer di Sistema e definizione di unità temporale )
+\ Università degli Studi di Palermo )
+\ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
+
+\ includere dopo hdmi.f
+
 HEX 
 
 \ Clock Register
