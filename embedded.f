@@ -390,10 +390,10 @@ HEX
 : IS_CMD 
   DUP 8 RSHIFT 1 = ;
 
-\ Decide se stiamo inviando un comando o un dato a I2C
+\ Controlla se stiamo inviando un comando o un dato a I2C
 \ Commands ha un 1 in più nel bit più significativo rispetto ai dati
 \ Un input come 101 >LCD sarebbe considerato un COMANDO per cancellare lo schermo  0000 0001
-\ dove un input come 41 >LCD sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
+\ altrimenti se 0 ( ad esempio un input come 41 >LCD ) sarebbe considerato un DATA per inviare A CHAR (41 in esadecimale)
 \ allo schermo
 : >LCD 
   IS_CMD SWAP >LCDM 
@@ -835,8 +835,8 @@ HEX
 3E8FA000 CONSTANT FRAMEBUFFER
 
 VARIABLE DIM
-\ Contatore utilizzato nei cicli per disegnare le linee orizzontali
 
+\ Contatore utilizzato nei cicli per disegnare le linee orizzontali
 VARIABLE COUNTERH
 
 
@@ -856,14 +856,14 @@ VARIABLE NLINE
 : CENTER FRAMEBUFFER 200 4 * + 180 1000 * + ;
 \ Colora, con il colore presente sullo stack, il pixel corrispondente all'indirizzo
 \ presente sullo stack,
-\ dopodiche punta al pixel a destra
+\ dopodichè punta al pixel a destra
 
 ( color addr -- color addr_col+1 )
 : RIGHT 2DUP ! 4 + ;
 
 \ Colora, con il colore presente sullo stack, il pixel corrispondente all'indirizzo
 \ presente sullo stack,
-\ dopodiche punta al pixel in basso
+\ dopodichè punta al pixel in basso
 
 ( color addr -- color addr_row+1 )
 : DOWN 2DUP ! 1000 + ;
@@ -1132,7 +1132,7 @@ HEX
     ;
 
 
-\ Solo setup Hardware per testing
+\ Solo setup Hardware per testing.
   : ONLY_SETUP
   CLEAN
   DRAWITAFLAG
@@ -1150,14 +1150,16 @@ HEX
   STOP_DISP
   ;
 
-: PARTIAL GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO DEL SISTEMA " CR SETUP THEN 0 GPEDS0 ! ;
+\ Viene letto il valore del registro GPEDS0, che se ha valore 4000000 ( ovvero rilevato fronte sul GPIO26 ) fa partire il setup. 
+: POWER_ON GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO DEL SISTEMA " CR SETUP THEN 0 GPEDS0 ! ;
 
+\ Ciclo infinito che mette il sistema in ascolto della premuta del tasto di accensione asincrono
 : START
     SETUP_BUTTON
     GPAREN!
     BEGIN
       WHILE
-        PARTIAL
+        POWER_ON
       REPEAT
     0 GPEDS0 !
 ;
