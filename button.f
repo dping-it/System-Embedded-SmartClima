@@ -21,6 +21,7 @@ HEX
 
 \ Rendiamo sensibile ai fronti di salita il GPIO26 a cui è associati il pulsante, quindi
 \ avremo 1000 0000 0000 0000 0000 0000 0000 che equivale a 4000000 in decimale o 0x63 in esadecimale
+\ l'OR logico ci permette di aggiornare e di non cancellare precedenti settaggi.
 
 : GPAREN! 4000000 GPAREN0 @ OR GPAREN0 ! ;
 

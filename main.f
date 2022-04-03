@@ -1,3 +1,10 @@
+\ Embedded Systems - Sistemi Embedded - 17873)
+\ Main Words )
+\ Università degli Studi di Palermo )
+\ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
+
+\ includere dopo tutti gli altri *.f
+
 
 HEX
 \ Aziona il Sistema Illuminazione
@@ -105,7 +112,7 @@ HEX
 \ Viene letto il valore del registro GPEDS0, che se ha valore 4000000 ( ovvero rilevato fronte sul GPIO26 ) fa partire il setup. 
 : POWER_ON GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO DEL SISTEMA " CR SETUP THEN 0 GPEDS0 ! ;
 
-\ Ciclo infinito che mette il sistema in ascolto della premuta del tasto di accensione asincrono
+\ Ciclo d'avvio che mette il sistema in ascolto della premuta del tasto di accensione asincrono
 : START
     SETUP_BUTTON
     GPAREN!

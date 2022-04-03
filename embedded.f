@@ -185,6 +185,8 @@ HEX
 \ Indirizzo base dei registri GPIO in VMU FE200000 
 FE000000 CONSTANT BASE  
 
+\ I registri di selezione della funzione vengono utilizzati per definire il funzionamento dei pin di I/O generici e delle funzioni
+\ alternative relative.
 BASE 200000 + CONSTANT GPFSEL0 
 BASE 200004 + CONSTANT GPFSEL1
 BASE 200008 + CONSTANT GPFSEL2
@@ -193,11 +195,22 @@ BASE 200008 + CONSTANT GPFSEL2
 \ di onda sui pin GPIO.
 BASE 200040 + CONSTANT GPEDS0
 
+\ Registro del set di output utilizzato per impostare un pin GPIO. Ogni bit definisce il comportamento del pin GPIO da impostare ( bit 1 = GPIO0 )
+\ Se il pin GPIO viene utilizzato come input (per impostazione predefinita), il valore nel campo SETn è ignorato.
+\ Tuttavia, se il pin viene successivamente definito come uscita, il bit verrà impostato in base all'ultimo operazione di set/cancellazione.
 BASE 20001C + CONSTANT GPSET0
+
+\ Registro di cancellazione dell'uscita viene utilizzati per cancellare un pin GPIO. Ogni bit corrisponde ad un pin GPIO da cancellare ( bit 1 = GPIO0 )
+\ Se il pin GPIO viene utilizzato come input (per impostazione predefinita), il valore nel campo CLRN è ignorato.
+\ Tuttavia, se il pin viene successivamente definito come uscita, il bit verrà impostato in base all'ultimo operazione di set/cancellazione.
 BASE 200028 + CONSTANT GPCLR0
 
+\ Registro del livello del pin:  restituisce il valore effettivo del pin. Il campo LEVn fornisce il valore del rispettivo pin GPIO.
 BASE 200034 + CONSTANT GPLEV0
 
+\ Registro di abilitazione del rilevamento del fronte di discesa definisce i pin per i quali una transizione del fronte di discesa imposta 
+\ un bit nell'evento di rilevamento registri di stato (GPEDSn). Il registro GPFENn utilizza il rilevamento del fronte sincrono. Questo
+\ significa che il segnale di ingresso viene campionato utilizzando il clock di sistema e quindi cerca un pattern "100" sul segnale.
 BASE 200058 + CONSTANT GPFEN0
 
 \ Registro di abilitazione del rilevamento del fronte di salita asincrono sui pin GPIO dove è abilitato 
@@ -254,6 +267,11 @@ DECIMAL
 \ Uguale a OUTPUT ma elimina il valore di spostamento non necessario e il bit GPFSELN che controlla l'ingresso GPIO è impostato dal
 \ INVERTE AND operazione tra il valore corrente di GPFSELN, azzerato dalla maschera,
 : INPUT 1 SWAP LSHIFT INVERT AND SWAP ! ;
+
+\ GPIO On e Off
+\ : ON ( pin -- ) 1 SWAP LSHIFT GPSET0 ! ;
+\ : OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
+
 
 \ ON ( n -- ) prende il numero pin GPIO, sposta a sinistra 1 per questo numero e imposta il bit corrispondente del registro GPCLR0
 : ON 1 SWAP LSHIFT GPSET0 ! ;
@@ -530,14 +548,12 @@ HEX
 
 \ Includere dopo il flie gpio.f e ans.f
 
-\ LED GPIO SETTING IN HEX
+\ Il sistema led è composto da 3 led di colore diverso e da 3 resistori ceramici da 200 ohm che servono da protezione agli stessi led.
+\ Ogni led è collegato ad un GPIO specifico che ne abilita l’emissione luminosa e lo stesso GPIO gestisce il NC dell’attivazione di un relè.
+\ I GPIO 5, 6, e il 12 (in HEX C) sono configurati come OUT.
 5 CONSTANT YELLOWLED
 6 CONSTANT REDLED
 C CONSTANT GREENLED
-
-\ GPIO On e Off
-: ON ( pin -- ) 1 SWAP LSHIFT GPSET0 ! ;
-: OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
 
 \ Setup Led abilita i GPIO come output
 : SETUP_LED 
@@ -571,6 +587,7 @@ C CONSTANT GREENLED
 VARIABLE LIGHTIME 
 VARIABLE WINDTIME
 
+\ Le variabili temporali vengono inizializzate a 1
 1 LIGHTIME !
 1 WINDTIME !
 \ Embedded Systems - Sistemi Embedded - 17873
@@ -814,6 +831,13 @@ CREATE COUNTER
   ." RUN SYSTEM . . . " CR
   ." SETTING TIME LIGHT >>>    "  CAS @ . CASS @ . ."    SECONDS " CR  
   ." SETTING TIME WIND >>>    "  COS @ . COSS @ . ."    SECONDS " CR CR ;  
+\ Embedded Systems - Sistemi Embedded - 17873)
+\ Gestione dell'uscita HDMI del FrameBuffer)
+\ Università degli Studi di Palermo )
+\ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
+
+\ includere dopo pad.f
+
 HEX
 
 \ IMPOSTAZIONI  DEL FRAMEBUFFER SU INTERPRETE
@@ -831,7 +855,7 @@ HEX
 0000FF00 CONSTANT GREEN
 000000FF CONSTANT BLUE
 
-\ Dichiarazione del base address del framebuffer
+\ Dichiarazione del base address del framebuffer ( definito nel kernel )
 3E8FA000 CONSTANT FRAMEBUFFER
 
 VARIABLE DIM
@@ -870,7 +894,7 @@ VARIABLE NLINE
 
 \ Colora, con il colore presente sullo stack, il pixel corrispondente all'indirizzo
 \ presente sullo stack,
-\ dopodiche punta al pixel a sinistra
+\ dopodichè punta al pixel a sinistra
 
 ( color addr -- color addr_col-1 )
 : LEFT 2DUP ! 4 - ;
@@ -898,9 +922,9 @@ VARIABLE NLINE
 
 
 \ Disegna o il simbolo di stop o pulisce la porzione di schermo su cui disegnamo.
-\ Partendo da CENTER-32px-48px, quindi CENTER-80px, e poiche ogni spostamento di 1px su
+\ Partendo da CENTER-32px-48px, quindi CENTER-80px, e poichè ogni spostamento di 1px su
 \ una riga
-\ vale 4, abbiamo 320 in dec e cioe 140 in hex
+\ vale 4, abbiamo 320 in dec e cioè 140 in hex
 : DRAWSQUARE
     80 DIM !
     CENTER 140 - RIGHTDRAW
@@ -977,6 +1001,13 @@ VARIABLE NLINE
         REPEAT
     4DROP RESETNLINE
 ;
+\ Embedded Systems - Sistemi Embedded - 17873)
+\ Timer di Sistema e definizione di unità temporale )
+\ Università degli Studi di Palermo )
+\ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
+
+\ includere dopo hdmi.f
+
 HEX 
 
 \ Clock Register
@@ -1026,11 +1057,11 @@ DECIMAL : TIMER PARSE_DEC_HEX TIME_COUNTER ! CR begin TIME_COUNTER @ SLEEPS DECC
 
 HEX
 \ Embedded Systems - Sistemi Embedded - 17873)
-\ LCD Setup paraole per la compilazione di messaggi su LCD 1602 )
+\ Bottone POWER ON )
 \ Università degli Studi di Palermo )
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 )
 
-\ includere dopo pad.f
+\ includere dopo timer.f
 
 \ Word per il controllo del bottone d'avvio
 
@@ -1041,8 +1072,14 @@ HEX
   40000 GPFSEL2 @ OR GPFSEL2 ! 
 ;
 
+\ I registri di abilitazione del rilevamento del fronte di salita asincrono definiscono i pin per i quali è verificata la presenza di 
+\ un fronte di salita asincrono: la transizione imposta un bit nei registri di stato di rilevamento eventi (GPEDSn).
+\ Asincrono significa che il segnale in ingresso non è campionato dall'orologio di sistema. Tali fronti di salita si possono verificarsi 
+\ in tempi molto brevi, in qualunque istante ed è possibile rilevare la durata. 
+
 \ Rendiamo sensibile ai fronti di salita il GPIO26 a cui è associati il pulsante, quindi
 \ avremo 1000 0000 0000 0000 0000 0000 0000 che equivale a 4000000 in decimale o 0x63 in esadecimale
+\ l'OR logico ci permette di aggiornare e di non cancellare precedenti settaggi.
 
 : GPAREN! 4000000 GPAREN0 @ OR GPAREN0 ! ;
 
@@ -1153,7 +1190,7 @@ HEX
 \ Viene letto il valore del registro GPEDS0, che se ha valore 4000000 ( ovvero rilevato fronte sul GPIO26 ) fa partire il setup. 
 : POWER_ON GPEDS0 @ 4000000 = IF ." PREMUTO TASTO AVVIO DEL SISTEMA " CR SETUP THEN 0 GPEDS0 ! ;
 
-\ Ciclo infinito che mette il sistema in ascolto della premuta del tasto di accensione asincrono
+\ Ciclo d'avvio che mette il sistema in ascolto della premuta del tasto di accensione asincrono
 : START
     SETUP_BUTTON
     GPAREN!

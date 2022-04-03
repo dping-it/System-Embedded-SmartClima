@@ -108,7 +108,8 @@
     20 >LCD ;
 
 \ Set di words che accede al blocco funzioni del LCD
-\ Il nono bit impostato a 1 abilita ENABLE vedi datasheet 1602
+\ Il bit più significativo impostato a 1 identifica una funzione anzicchè una dato
+\ Se RS è HIGH 1 inviamo un Data Signal, se LOW 0 un Istruction Signal.
 \ 0x80 → Indirizzo di memoria della DDRAM del display LCD per la linea 1
 \ 0xC0 → Indirizzo di memoria della DDRAM del display LCD per la linea 2
 

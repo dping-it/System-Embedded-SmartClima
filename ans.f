@@ -1,6 +1,5 @@
 \ Embedded Systems - Sistemi Embedded - 17873
-\ some dictionary definitions
-\ from  pijFORTHos
+\ definizione di alcune word per l'interprete pijFORTHos
 \ modificated by Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22
 
 \ '\n'	newline character (10)

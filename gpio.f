@@ -1,5 +1,5 @@
 \ Embedded Systems - Sistemi Embedded - 17873
-\ Settaggi GPIO 
+\ Configurazione dei registri General Purpose e funzioni sui GPIO 
 \ Università degli Studi di Palermo 
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 
 
@@ -11,6 +11,8 @@ HEX
 \ Indirizzo base dei registri GPIO in VMU FE200000 
 FE000000 CONSTANT BASE  
 
+\ I registri di selezione della funzione vengono utilizzati per definire il funzionamento dei pin di I/O generici e delle funzioni
+\ alternative relative.
 BASE 200000 + CONSTANT GPFSEL0 
 BASE 200004 + CONSTANT GPFSEL1
 BASE 200008 + CONSTANT GPFSEL2
@@ -19,11 +21,22 @@ BASE 200008 + CONSTANT GPFSEL2
 \ di onda sui pin GPIO.
 BASE 200040 + CONSTANT GPEDS0
 
+\ Registro del set di output utilizzato per impostare un pin GPIO. Ogni bit definisce il comportamento del pin GPIO da impostare ( bit 1 = GPIO0 )
+\ Se il pin GPIO viene utilizzato come input (per impostazione predefinita), il valore nel campo SETn è ignorato.
+\ Tuttavia, se il pin viene successivamente definito come uscita, il bit verrà impostato in base all'ultimo operazione di set/cancellazione.
 BASE 20001C + CONSTANT GPSET0
+
+\ Registro di cancellazione dell'uscita viene utilizzati per cancellare un pin GPIO. Ogni bit corrisponde ad un pin GPIO da cancellare ( bit 1 = GPIO0 )
+\ Se il pin GPIO viene utilizzato come input (per impostazione predefinita), il valore nel campo CLRN è ignorato.
+\ Tuttavia, se il pin viene successivamente definito come uscita, il bit verrà impostato in base all'ultimo operazione di set/cancellazione.
 BASE 200028 + CONSTANT GPCLR0
 
+\ Registro del livello del pin:  restituisce il valore effettivo del pin. Il campo LEVn fornisce il valore del rispettivo pin GPIO.
 BASE 200034 + CONSTANT GPLEV0
 
+\ Registro di abilitazione del rilevamento del fronte di discesa definisce i pin per i quali una transizione del fronte di discesa imposta 
+\ un bit nell'evento di rilevamento registri di stato (GPEDSn). Il registro GPFENn utilizza il rilevamento del fronte sincrono. Questo
+\ significa che il segnale di ingresso viene campionato utilizzando il clock di sistema e quindi cerca un pattern "100" sul segnale.
 BASE 200058 + CONSTANT GPFEN0
 
 \ Registro di abilitazione del rilevamento del fronte di salita asincrono sui pin GPIO dove è abilitato 
@@ -80,6 +93,11 @@ DECIMAL
 \ Uguale a OUTPUT ma elimina il valore di spostamento non necessario e il bit GPFSELN che controlla l'ingresso GPIO è impostato dal
 \ INVERTE AND operazione tra il valore corrente di GPFSELN, azzerato dalla maschera,
 : INPUT 1 SWAP LSHIFT INVERT AND SWAP ! ;
+
+\ GPIO On e Off
+\ : ON ( pin -- ) 1 SWAP LSHIFT GPSET0 ! ;
+\ : OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
+
 
 \ ON ( n -- ) prende il numero pin GPIO, sposta a sinistra 1 per questo numero e imposta il bit corrispondente del registro GPCLR0
 : ON 1 SWAP LSHIFT GPSET0 ! ;

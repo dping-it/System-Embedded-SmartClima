@@ -1,18 +1,16 @@
 \ Embedded Systems - Sistemi Embedded - 17873
-\ Leds Drive 
+\ Led Drive e Relè 
 \ Università degli Studi di Palermo 
 \ Davide Proietto matr. 0739290 LM Ingegneria Informatica, 21-22 
 
 \ Includere dopo il flie gpio.f e ans.f
 
-\ LED GPIO SETTING IN HEX
+\ Il sistema led è composto da 3 led di colore diverso e da 3 resistori ceramici da 200 ohm che servono da protezione agli stessi led.
+\ Ogni led è collegato ad un GPIO specifico che ne abilita l’emissione luminosa e lo stesso GPIO gestisce il NC dell’attivazione di un relè.
+\ I GPIO 5, 6, e il 12 (in HEX C) sono configurati come OUT.
 5 CONSTANT YELLOWLED
 6 CONSTANT REDLED
 C CONSTANT GREENLED
-
-\ GPIO On e Off
-: ON ( pin -- ) 1 SWAP LSHIFT GPSET0 ! ;
-: OFF ( pin -- ) 1 SWAP LSHIFT GPCLR0 ! ;
 
 \ Setup Led abilita i GPIO come output
 : SETUP_LED 
@@ -46,5 +44,6 @@ C CONSTANT GREENLED
 VARIABLE LIGHTIME 
 VARIABLE WINDTIME
 
+\ Le variabili temporali vengono inizializzate a 1
 1 LIGHTIME !
 1 WINDTIME !
