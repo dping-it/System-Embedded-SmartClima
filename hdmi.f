@@ -146,7 +146,7 @@ VARIABLE NLINE
 
 : CLEAN BLACK DRAWSQUARE ;
 
-\ Disegna la bandiera
+\ Disegna la bandiera italiana
 : DRAWITAFLAG
 
     WHITE DRAWSQUARE

@@ -98,13 +98,13 @@ CREATE COUNTER
 : COUNTER++ 
   COUNTER @ 1 + COUNTER ! ;
 
- \ Memorizza il valore in decimale di un numero nell'array D_CMDS e lo emette su LCD
+ \ Memorizza il valore in decimale di un numero nella variabile e lo emette su LCD
 \ Duplica il TOS ed emettilo
-\ Lascia l'indirizzo D_CMDS su TOS
+\ Lascia l'indirizzo della variabile su TOS
 \ Lascia il valore COUNTER su TOS
-\ Lasciare l'indirizzo del COUNTER'esimo indice dell'array D_CMDS su TOS
+\ Lasciare l'indirizzo del COUNTER'esimo indice della variabile su TOS
 \ Infine memorizzare il valore DEC emesso a quell'indirizzo
-\ Esempio: 30 EMIT_STORE -> Stampa 0 su LCD e lo memorizza in D_CMDS[COUNTER_current_value] 
+\ Esempio: 30 EMIT_STORE -> Stampa 0 su LCD e lo memorizza nella variabile attesa.
 : EMIT_STORE 
   COUNTER @ 0 = IF LIGHT 1000 DELAY ELSE
   COUNTER @ 2 = IF >LINE2 WIND 1000 DELAY
